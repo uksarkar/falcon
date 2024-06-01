@@ -163,9 +163,13 @@ impl Sandbox for HomePage {
                         HomeEventMessage::OnRequestTabChange,
                         Some(HomeEventMessage::MinimizeRequestTabs),
                         Some(if self.request_tabs.is_active() {
-                            container("-").padding(Padding::from([5, 10])).style(AppContainer::Outlined)
+                            container("-")
+                                .padding(Padding::from([5, 10]))
+                                .style(AppContainer::Outlined)
                         } else {
-                            container("+").padding(Padding::from([5, 10])).style(AppContainer::Outlined)
+                            container("+")
+                                .padding(Padding::from([5, 10]))
+                                .style(AppContainer::Outlined)
                         })
                     ),
                     container("")
@@ -174,12 +178,28 @@ impl Sandbox for HomePage {
                         .style(AppContainer::Hr),
                     Space::with_height(10),
                     req_tab,
-                    container(column![create_tabs!(
-                        self.response_tabs,
-                        HomeEventMessage::OnResponseTabChange,
-                        None,
-                        None
-                    ),])
+                    container(column![
+                        row![
+                            text("Response"),
+                            Space::with_width(Length::Fill),
+                            text("Status: "),
+                            text("Created 200"),
+                            Space::with_width(10),
+                            text("50ms"),
+                            Space::with_width(10),
+                            text("Size: 50kb"),
+                        ],
+                        container("")
+                            .width(Length::Fill)
+                            .height(1)
+                            .style(AppContainer::Hr),
+                        create_tabs!(
+                            self.response_tabs,
+                            HomeEventMessage::OnResponseTabChange,
+                            None,
+                            None
+                        ),
+                    ])
                     .height(Length::Fill)
                     .padding(10)
                     .width(Length::Fill)
