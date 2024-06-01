@@ -1,8 +1,10 @@
 use iced::{
     theme::Palette,
-    widget::{button, container},
+    widget::{button, container, text_input},
     Border, Color, Theme,
 };
+
+use crate::utils::color::darken_color;
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub enum AppTheme {
@@ -104,7 +106,9 @@ impl container::StyleSheet for AppContainer {
 
         let background = match self {
             AppContainer::Hr => Some(iced::Background::Color(style.palette().text)),
-            AppContainer::SuccessIndicator => Some(iced::Background::Color(style.palette().success)),
+            AppContainer::SuccessIndicator => {
+                Some(iced::Background::Color(style.palette().success))
+            }
             _ => Some(iced::Background::Color(Color::from_rgb(
                 237.0, 233.0, 220.0,
             ))),
@@ -121,5 +125,64 @@ impl container::StyleSheet for AppContainer {
 impl Into<iced::theme::Container> for AppContainer {
     fn into(self) -> iced::theme::Container {
         iced::theme::Container::Custom(Box::new(self))
+    }
+}
+
+pub struct AppInput;
+
+impl text_input::StyleSheet for AppInput {
+    type Style = Theme;
+
+    fn active(&self, style: &Self::Style) -> text_input::Appearance {
+        text_input::Appearance {
+            background: iced::Background::Color(darken_color(
+                Color::from_rgb(237.0, 233.0, 220.0),
+                2,
+            )),
+            border: Border::default(),
+            icon_color: style.palette().primary,
+        }
+    }
+
+    fn focused(&self, style: &Self::Style) -> text_input::Appearance {
+        text_input::Appearance {
+            background: iced::Background::Color(darken_color(
+                Color::from_rgb(237.0, 233.0, 220.0),
+                5,
+            )),
+            ..self.active(style)
+        }
+    }
+
+    fn placeholder_color(&self, _style: &Self::Style) -> Color {
+        darken_color(Color::from_rgb(237.0, 233.0, 220.0), 30)
+    }
+
+    fn value_color(&self, style: &Self::Style) -> Color {
+        style.palette().text
+    }
+
+    fn disabled_color(&self, style: &Self::Style) -> Color {
+        style.palette().background
+    }
+
+    fn selection_color(&self, style: &Self::Style) -> Color {
+        style.extended_palette().primary.strong.color
+    }
+
+    fn disabled(&self, style: &Self::Style) -> text_input::Appearance {
+        let color = style.extended_palette().primary.weak.color;
+
+        text_input::Appearance {
+            background: iced::Background::Color(color.clone()),
+            border: Border::default(),
+            icon_color: color,
+        }
+    }
+}
+
+impl Into<iced::theme::TextInput> for AppInput {
+    fn into(self) -> iced::theme::TextInput {
+        iced::theme::TextInput::Custom(Box::new(self))
     }
 }
