@@ -1,5 +1,5 @@
 use iced::widget::svg::Handle;
-use iced::widget::{button, column, container, mouse_area, row, svg, text, Space};
+use iced::widget::{button, column, container, mouse_area, row, svg, text, Column, Space};
 use iced::{Element, Length, Padding, Sandbox};
 use url_input_bar::url_input_bar;
 
@@ -87,8 +87,10 @@ impl Sandbox for HomePage {
     }
 
     fn view(&self) -> Element<Self::Message> {
-        let req_active_tab = if let Some(tab) = self.request_tabs.get_active() {
-            container(column![
+        let mut req_tab = Column::new();
+
+        if let Some(tab) = self.request_tabs.get_active() {
+            req_tab = req_tab.push(container(column![
                 text(format!("Inserted URL: {}", self.url)),
                 match tab.label.as_str() {
                     "Query" => container(text("This is for Query tab")),
@@ -102,10 +104,10 @@ impl Sandbox for HomePage {
             .padding(10)
             .height(330)
             .width(Length::Fill)
-            .style(AppContainer::Rounded)
-        } else {
-            container("")
-        };
+            .style(AppContainer::Rounded));
+            
+            req_tab = req_tab.push(Space::with_height(10));
+        }
 
         column![
             container(
@@ -169,15 +171,14 @@ impl Sandbox for HomePage {
                         .height(1)
                         .style(AppContainer::Hr),
                     Space::with_height(10),
-                    req_active_tab,
-                    Space::with_height(10),
+                    req_tab,
                     container(column![create_tabs!(
                         self.response_tabs,
                         HomeEventMessage::OnResponseTabChange,
                         None,
                         None
                     ),])
-                    .height(330)
+                    .height(Length::Fill)
                     .padding(10)
                     .width(Length::Fill)
                     .style(AppContainer::Rounded),
