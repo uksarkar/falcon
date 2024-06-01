@@ -22,20 +22,20 @@ impl PartialEq<str> for TabNode {
 #[derive(Default)]
 pub struct Tabs {
     tabs: Vec<TabNode>,
-    is_deactivated: bool
+    is_deactivated: bool,
 }
 
 impl Tabs {
     pub fn new(items: Vec<&str>, active_elm: &str) -> Self {
         Self {
             tabs: items
-            .into_iter()
-            .map(|elm| TabNode {
-                is_active: elm == active_elm,
-                label: elm.to_string(),
-            })
-            .collect(),
-            is_deactivated: false
+                .into_iter()
+                .map(|elm| TabNode {
+                    is_active: elm == active_elm,
+                    label: elm.to_string(),
+                })
+                .collect(),
+            is_deactivated: false,
         }
     }
 
@@ -82,7 +82,7 @@ impl From<Vec<&str>> for Tabs {
     fn from(value: Vec<&str>) -> Self {
         Tabs {
             tabs: value.into_iter().map(|str| str.into()).collect(),
-            is_deactivated: false
+            is_deactivated: false,
         }
     }
 }
@@ -139,9 +139,8 @@ macro_rules! create_tabs {
                 }).collect::<Vec<_>>();
 
             if let Some(message) = $minimize {
-                let label = if let Some(txt) = $label {txt} else {"-"};
                 items.push(container("").width(iced::Length::Fill));
-                items.push(container(mouse_area(label).on_press(message).interaction(iced::mouse::Interaction::Pointer)));
+                items.push(container(mouse_area(if let Some(txt) = $label {txt} else {container("-")}).on_press(message).interaction(iced::mouse::Interaction::Pointer)));
             }
 
             container(Row::from_vec(items.into_iter().map(|elm| elm.into()).collect()).width(iced::Length::Fill).align_items(Alignment::Center))

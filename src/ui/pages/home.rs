@@ -90,22 +90,24 @@ impl Sandbox for HomePage {
         let mut req_tab = Column::new();
 
         if let Some(tab) = self.request_tabs.get_active() {
-            req_tab = req_tab.push(container(column![
-                text(format!("Inserted URL: {}", self.url)),
-                match tab.label.as_str() {
-                    "Query" => container(text("This is for Query tab")),
-                    "Header" => container(text("This is for Header")),
-                    "Body" => container(text("This is for Body")),
-                    "Authorization" => container(text("This is for Authorization")),
-                    "Cookies" => container(text("This is for Cookies")),
-                    _ => container("Unknown tab"),
-                }
-            ])
-            .padding(10)
-            .height(330)
-            .width(Length::Fill)
-            .style(AppContainer::Rounded));
-            
+            req_tab = req_tab.push(
+                container(column![
+                    text(format!("Inserted URL: {}", self.url)),
+                    match tab.label.as_str() {
+                        "Query" => container(text("This is for Query tab")),
+                        "Header" => container(text("This is for Header")),
+                        "Body" => container(text("This is for Body")),
+                        "Authorization" => container(text("This is for Authorization")),
+                        "Cookies" => container(text("This is for Cookies")),
+                        _ => container("Unknown tab"),
+                    }
+                ])
+                .padding(10)
+                .height(330)
+                .width(Length::Fill)
+                .style(AppContainer::Rounded),
+            );
+
             req_tab = req_tab.push(Space::with_height(10));
         }
 
@@ -161,9 +163,9 @@ impl Sandbox for HomePage {
                         HomeEventMessage::OnRequestTabChange,
                         Some(HomeEventMessage::MinimizeRequestTabs),
                         Some(if self.request_tabs.is_active() {
-                            "-"
+                            container("-").padding(Padding::from([5, 10])).style(AppContainer::Outlined)
                         } else {
-                            "+"
+                            container("+").padding(Padding::from([5, 10])).style(AppContainer::Outlined)
                         })
                     ),
                     container("")
