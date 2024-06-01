@@ -1,6 +1,9 @@
+use std::rc::Rc;
+
 use iced::{
+    overlay::menu,
     theme::Palette,
-    widget::{button, container, text_input},
+    widget::{button, container, pick_list, text_input},
     Border, Color, Theme,
 };
 
@@ -92,7 +95,7 @@ pub enum AppContainer {
     Flat,
     Hr,
     SuccessIndicator,
-    Outlined
+    Outlined,
 }
 
 impl container::StyleSheet for AppContainer {
@@ -114,7 +117,7 @@ impl container::StyleSheet for AppContainer {
             AppContainer::Hr => Some(iced::Background::Color(style.palette().text)),
             AppContainer::SuccessIndicator => {
                 Some(iced::Background::Color(style.palette().success))
-            },
+            }
             AppContainer::Outlined => Some(iced::Background::Color(iced::Color::TRANSPARENT)),
             _ => Some(iced::Background::Color(Color::from_rgb(
                 237.0, 233.0, 220.0,
@@ -191,5 +194,62 @@ impl text_input::StyleSheet for AppInput {
 impl Into<iced::theme::TextInput> for AppInput {
     fn into(self) -> iced::theme::TextInput {
         iced::theme::TextInput::Custom(Box::new(self))
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum AppSelect {
+    Card,
+}
+
+impl pick_list::StyleSheet for AppSelect {
+    type Style = Theme;
+
+    fn active(&self, style: &<Self as pick_list::StyleSheet>::Style) -> pick_list::Appearance {
+        let palette = style.palette();
+
+        pick_list::Appearance {
+            text_color: palette.text,
+            placeholder_color: darken_color(palette.text, 10),
+            handle_color: darken_color(palette.text, 10),
+            background: iced::Background::Color(Color::from_rgb(237.0, 233.0, 220.0)),
+            border: Border::default(),
+        }
+    }
+
+    fn hovered(&self, style: &<Self as pick_list::StyleSheet>::Style) -> pick_list::Appearance {
+        pick_list::Appearance {
+            background: iced::Background::Color(darken_color(
+                Color::from_rgb(237.0, 233.0, 220.0),
+                10,
+            )),
+            ..self.active(style)
+        }
+    }
+}
+
+impl menu::StyleSheet for AppSelect {
+    type Style = Theme;
+
+    fn appearance(&self, style: &Self::Style) -> menu::Appearance {
+        let palette = style.palette();
+
+        menu::Appearance {
+            text_color: palette.text,
+            background: iced::Background::Color(Color::from_rgb(237.0, 233.0, 220.0)),
+            border: Border {
+                color: darken_color(Color::from_rgb(237.0, 233.0, 220.0), 10),
+                width: 1.0,
+                radius: 5.0.into()
+            },
+            selected_text_color: palette.primary,
+            selected_background: iced::Background::Color(darken_color(Color::from_rgb(237.0, 233.0, 220.0), 10)),
+        }
+    }
+}
+
+impl Into<iced::theme::PickList> for AppSelect {
+    fn into(self) -> iced::theme::PickList {
+        iced::theme::PickList::Custom(Rc::new(self), Rc::new(self))
     }
 }

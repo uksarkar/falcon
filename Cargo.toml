@@ -6,3 +6,6 @@ edition = "2021"
 [dependencies]
 directories = "5.0.1"
 iced = { version = "0.12.1", features = ["svg", "image"] }
+serde = { version = "1.0.203", features = ["serde_derive"] }
+toml = "0.8.13"
+uuid = { version = "1.8.0", features = ["v7", "serde"] }

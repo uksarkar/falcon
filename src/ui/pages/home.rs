@@ -1,12 +1,15 @@
 use iced::widget::svg::Handle;
-use iced::widget::{button, column, container, mouse_area, row, svg, text, Column, Space};
+use iced::widget::{
+    button, column, container, mouse_area, pick_list, row, svg, text, Column, Space,
+};
 use iced::{Element, Length, Padding, Sandbox};
 use url_input_bar::url_input_bar;
 
 use crate::ui::app_component::AppComponent;
-use crate::ui::app_theme::{AppBtn, AppContainer, AppTheme};
+use crate::ui::app_theme::{AppBtn, AppContainer, AppSelect, AppTheme};
 use crate::ui::elements::tabs::Tabs;
 use crate::ui::message_bus::Route;
+use crate::utils::db::{Project, Projects};
 use crate::utils::helpers::page_title;
 use crate::{create_tabs, ui::elements::tabs::TabNode};
 
@@ -17,6 +20,7 @@ pub struct HomePage {
     url: String,
     request_tabs: Tabs,
     response_tabs: Tabs,
+    projects: Projects,
 }
 
 impl Default for HomePage {
@@ -29,6 +33,7 @@ impl Default for HomePage {
                 "Query",
             ),
             response_tabs: Tabs::new(vec!["Header", "Body", "Cookies"], "Body"),
+            projects: Projects::new(),
         }
     }
 }
@@ -41,7 +46,8 @@ pub enum HomeEventMessage {
     OnResponseTabChange(TabNode),
     MinimizeRequestTabs,
     SendRequest,
-    NewProject,
+    NewProject(String),
+    OnProjectChange(Project),
 }
 
 impl AppComponent for HomePage {
@@ -81,6 +87,19 @@ impl Sandbox for HomePage {
             }
             HomeEventMessage::MinimizeRequestTabs => {
                 self.request_tabs.toggle_activation();
+            }
+            HomeEventMessage::NewProject(name) => {
+                match self.projects.add(Project {
+                    name,
+                    is_active: true,
+                    ..Default::default()
+                }) {
+                    Ok(()) => (),
+                    Err(e) => println!("{:<8}{}", "DB: ", e),
+                }
+            }
+            HomeEventMessage::OnProjectChange(project) => {
+                self.projects.set_active(&project.id);
             }
             _ => (),
         };
@@ -123,11 +142,16 @@ impl Sandbox for HomePage {
                     )
                     .padding(Padding::from([0.0, 5.0])),
                     container("Layout").padding(Padding::from([0.0, 5.0])),
-                    container("Unknown project").padding(Padding::from([0.0, 5.0])),
+                    Space::with_width(5),
+                    pick_list(self.projects.clone(), self.projects.active(), |proj| {
+                        HomeEventMessage::OnProjectChange(proj)
+                    })
+                    .style(AppSelect::Card),
+                    Space::with_width(10),
                     button("New")
                         .style(AppBtn::Secondary)
                         .padding(Padding::from([5, 15]))
-                        .on_press(HomeEventMessage::NewProject),
+                        .on_press(HomeEventMessage::NewProject("Something new".to_string())),
                 ]
                 .padding(8.0)
                 .align_items(iced::Alignment::Center)
