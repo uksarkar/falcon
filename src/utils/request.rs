@@ -1,10 +1,10 @@
 use reqwest::cookie::Jar;
 use reqwest::header::HeaderMap;
 use reqwest::{Client, Method, StatusCode};
+use std::collections::HashMap;
 use std::fmt::Display;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
-use std::{collections::HashMap, marker::PhantomData};
+use std::time::{Duration, Instant, SystemTime};
 
 use crate::utils::helpers::format_duration;
 
@@ -22,17 +22,25 @@ impl Display for FalconDuration {
         write!(f, "{}", format_duration(self.0))
     }
 }
+#[derive(Debug, Clone)]
+pub struct FalconCookie {
+    pub name: String,
+    pub value: Option<String>,
+    pub http_only: bool,
+    pub expires: Option<SystemTime>,
+}
 
 #[derive(Debug, Clone)]
 pub struct FalconResponse {
     pub status_code: StatusCode,
     pub body: String,
     pub headers: HeaderMap,
+    pub cookies: Vec<FalconCookie>,
     pub duration: FalconDuration,
-    pub size_kb: f64
+    pub size_kb: f64,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct PendingRequest {
     pub url: String,
     pub method: Method,
@@ -61,10 +69,7 @@ impl PendingRequest {
         let start = Instant::now();
 
         // Send a request
-        let res = client
-            .request(self.method.clone(), url)
-            .send()
-            .await?;
+        let res = client.request(self.method.clone(), url).send().await?;
 
         // Calculate the duration
         let duration = start.elapsed();
@@ -72,6 +77,16 @@ impl PendingRequest {
         // Get the status, body, headers, and cookies
         let status_code = res.status();
         let headers = res.headers().clone();
+
+        let cookies: Vec<FalconCookie> = res.cookies().map(|c| {
+            FalconCookie {
+                name: c.name().to_string(),
+                http_only: c.http_only(),
+                value: Some(c.value().to_string()),
+                expires: c.expires(),
+            }
+        }).collect();
+
         let body = res.text().await.unwrap_or_default();
 
         // Calculate response size in kilobytes
@@ -82,59 +97,15 @@ impl PendingRequest {
             duration: duration.into(),
             headers,
             size_kb,
-            status_code
+            status_code,
+            cookies
         })
     }
-}
 
-#[derive(Default, Clone)]
-pub struct NoUrl;
-
-#[derive(Default, Clone)]
-pub struct Url(String);
-
-#[derive(Default, Clone)]
-pub struct Locked;
-
-#[derive(Default, Clone)]
-pub struct Unlocked;
-
-#[derive(Debug, Clone, Default)]
-pub struct RequestBuilder<U, L> {
-    url: U,
-    method: Method,
-    headers: HashMap<String, String>,
-    cookies: HashMap<String, String>,
-    _locked: PhantomData<L>,
-}
-
-impl RequestBuilder<NoUrl, Unlocked> {
-    pub fn new() -> RequestBuilder<NoUrl, Unlocked> {
-        Self::default()
+    pub fn set_url(&mut self, url: impl Into<String>) {
+        self.url = url.into();
     }
-}
-
-impl<U> RequestBuilder<U, Unlocked> {
-    pub fn url(self, url: impl Into<String>) -> RequestBuilder<Url, Unlocked> {
-        RequestBuilder {
-            url: Url(url.into()),
-            headers: self.headers,
-            cookies: self.cookies,
-            method: self.method,
-            _locked: PhantomData,
-        }
-    }
-
-    pub fn method(self, method: Method) -> RequestBuilder<U, Unlocked> {
-        RequestBuilder {
-            url: self.url,
-            headers: self.headers,
-            cookies: self.cookies,
-            method,
-            _locked: PhantomData,
-        }
-    }
-
+    
     pub fn add_header(&mut self, name: impl Into<String>, value: impl Into<String>) {
         self.headers.insert(name.into(), value.into());
     }
@@ -143,36 +114,7 @@ impl<U> RequestBuilder<U, Unlocked> {
         self.cookies.insert(name.into(), value.into());
     }
 
-    pub fn lock(self) -> RequestBuilder<U, Locked> {
-        RequestBuilder {
-            url: self.url,
-            headers: self.headers,
-            cookies: self.cookies,
-            method: self.method,
-            _locked: PhantomData,
-        }
-    }
-}
-
-impl<U> RequestBuilder<U, Locked> {
-    pub fn unlock(self) -> RequestBuilder<U, Unlocked> {
-        RequestBuilder {
-            url: self.url,
-            headers: self.headers,
-            cookies: self.cookies,
-            method: self.method,
-            _locked: PhantomData,
-        }
-    }
-}
-
-impl<L> RequestBuilder<Url, L> {
-    pub fn build(self) -> PendingRequest {
-        PendingRequest {
-            url: self.url.0,
-            method: self.method,
-            headers: self.headers,
-            cookies: self.cookies,
-        }
+    pub fn set_method(&mut self, method: Method) {
+        self.method = method;
     }
 }

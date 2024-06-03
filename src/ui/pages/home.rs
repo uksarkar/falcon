@@ -1,6 +1,7 @@
+use chrono::{DateTime, Utc};
 use iced::widget::svg::Handle;
 use iced::widget::{
-    button, column, container, mouse_area, pick_list, row, svg, text, Column, Space,
+    button, column, container, mouse_area, pick_list, row, scrollable, svg, text, Column, Space,
 };
 use iced::{Application, Command, Element, Length, Padding, Theme};
 use reqwest::Method;
@@ -12,15 +13,14 @@ use crate::ui::elements::tabs::Tabs;
 use crate::ui::message_bus::Route;
 use crate::utils::db::{Project, Projects};
 use crate::utils::helpers::page_title;
-use crate::utils::request::{FalconResponse, RequestBuilder};
+use crate::utils::request::{FalconResponse, PendingRequest};
 use crate::{create_tabs, ui::elements::tabs::TabNode};
 
 mod url_input_bar;
 
 pub struct HomePage {
     theme: Option<AppTheme>,
-    url: String,
-    method: Method,
+    pending_request: PendingRequest,
     request_tabs: Tabs,
     response_tabs: Tabs,
     projects: Projects,
@@ -32,16 +32,18 @@ impl Default for HomePage {
     fn default() -> Self {
         Self {
             theme: Default::default(),
-            url: Default::default(),
             request_tabs: Tabs::new(
                 vec!["Query", "Header", "Body", "Authorization", "Cookies"],
                 "Query",
             ),
             response_tabs: Tabs::new(vec!["Header", "Body", "Cookies"], "Body"),
             projects: Projects::new(),
-            response: None,
+            pending_request: PendingRequest {
+                url: "https://".to_string(),
+                ..Default::default()
+            },
             is_requesting: false,
-            method: Method::GET
+            response: None,
         }
     }
 }
@@ -92,7 +94,7 @@ impl Application for HomePage {
     fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
         let command: Option<Command<Self::Message>> = match message {
             HomeEventMessage::UrlInput(url) => {
-                self.url = url;
+                self.pending_request.set_url(url);
                 self.response = None;
                 self.request_tabs.activate();
                 None
@@ -128,10 +130,10 @@ impl Application for HomePage {
             HomeEventMessage::SendRequest => {
                 self.is_requesting = true;
                 Some(Command::perform(
-                    send_request(self.url.clone()),
+                    send_request(self.pending_request.clone()),
                     |response| match response {
                         Ok(res) => HomeEventMessage::RequestFinished(res),
-                        Err(err) => HomeEventMessage::RequestErr(err.to_string())
+                        Err(err) => HomeEventMessage::RequestErr(err.to_string()),
                     },
                 ))
             }
@@ -156,12 +158,12 @@ impl Application for HomePage {
     }
 
     fn view(&self) -> Element<Self::Message> {
-        let mut req_tab = Column::new();
+        let mut conditional_container = Column::new();
 
         if let Some(tab) = self.request_tabs.get_active() {
-            req_tab = req_tab.push(
+            conditional_container = conditional_container.push(
                 container(column![
-                    text(format!("Inserted URL: {}", self.url)),
+                    text(format!("Inserted URL: {}", self.pending_request.url)),
                     match tab.label.as_str() {
                         "Query" => container(text("This is for Query tab")),
                         "Header" => container(text("This is for Header")),
@@ -176,47 +178,128 @@ impl Application for HomePage {
                 .width(Length::Fill)
                 .style(AppContainer::Rounded),
             );
-
-            req_tab = req_tab.push(Space::with_height(10));
         }
 
-        let mut response_card = container("");
-
         if let Some(response) = self.response.clone() {
-            let mut response_tab = Column::new();
+            conditional_container = conditional_container.push(Space::with_height(10));
 
-            response_tab = response_tab.push(row![
-                text("Response"),
-                Space::with_width(Length::Fill),
-                text("Status: "),
-                text(response.status_code),
-                Space::with_width(10),
-                text(response.duration),
-                Space::with_width(10),
-                text(format!("Size: {}kb", response.size_kb)),
-            ]);
+            let mut response_tab = Column::new()
+                .push(row![
+                    text("Response"),
+                    Space::with_width(Length::Fill),
+                    text("Status: "),
+                    text(response.status_code),
+                    Space::with_width(10),
+                    text(response.duration),
+                    Space::with_width(10),
+                    text(format!("Size: {}kb", response.size_kb)),
+                ])
+                .push(
+                    container("")
+                        .width(Length::Fill)
+                        .height(1)
+                        .style(AppContainer::Hr),
+                )
+                .push(create_tabs!(
+                    self.response_tabs,
+                    HomeEventMessage::OnResponseTabChange,
+                    None,
+                    None
+                ));
 
-            response_tab = response_tab.push(
-                container("")
+            let mut tab_container = Column::new();
+
+            if let Some(tab) = self.response_tabs.get_active() {
+                match tab.label.as_str() {
+                    "Body" => {
+                        tab_container = tab_container.push(
+                            container(text(response.body))
+                                .padding(10)
+                                .width(Length::Fill),
+                        );
+                    }
+                    "Header" => {
+                        for (name, value) in response.headers {
+                            let header_name = if let Some(header_name) = name {
+                                format!("{}", header_name.as_str())
+                            } else {
+                                "Unknown".to_string()
+                            };
+
+                            let header_value = format!("{:?}", value);
+
+                            if !header_name.trim().is_empty() && !header_value.trim().is_empty() {
+                                tab_container = tab_container.push(
+                                    container(column![
+                                        container(row![
+                                            text(header_name),
+                                            Space::with_width(10),
+                                            text(":"),
+                                            Space::with_width(10),
+                                            text(format!("{:?}", value))
+                                        ])
+                                        .width(Length::Fill)
+                                        .padding(5),
+                                        container("")
+                                            .width(Length::Fill)
+                                            .height(1)
+                                            .style(AppContainer::Hr)
+                                    ])
+                                    .padding(5),
+                                );
+                            }
+                        }
+                    }
+                    "Cookies" => {
+                        for cookie in response.cookies {
+                            tab_container = tab_container.push(
+                                container(column![
+                                    container(row![
+                                        text(cookie.name),
+                                        Space::with_width(10),
+                                        text(":"),
+                                        Space::with_width(10),
+                                        text(format!(
+                                            "{}, exp: {}, http_only: {}",
+                                            if let Some(val) = cookie.value {
+                                                val
+                                            } else {
+                                                "".to_string()
+                                            },
+                                            if let Some(val) = cookie.expires {
+                                                let datetime: DateTime<Utc> = val.into();
+                                                format!("{}", datetime.format("%Y-%m-%d %H:%M:%S"))
+                                            } else {
+                                                "".to_string()
+                                            },
+                                            cookie.http_only
+                                        ))
+                                    ])
+                                    .width(Length::Fill)
+                                    .padding(5),
+                                    container("")
+                                        .width(Length::Fill)
+                                        .height(1)
+                                        .style(AppContainer::Hr)
+                                ])
+                                .padding(5),
+                            );
+                        }
+                    }
+                    _ => {}
+                };
+            };
+
+            response_tab =
+                response_tab.push(container(scrollable(tab_container)).width(Length::Fill));
+
+            conditional_container = conditional_container.push(
+                container(response_tab)
+                    .height(Length::Fill)
+                    .padding(10)
                     .width(Length::Fill)
-                    .height(1)
-                    .style(AppContainer::Hr),
+                    .style(AppContainer::Rounded),
             );
-
-            response_tab = response_tab.push(create_tabs!(
-                self.response_tabs,
-                HomeEventMessage::OnResponseTabChange,
-                None,
-                None
-            ));
-
-            response_tab = response_tab.push(container(text(response.body)).padding(10));
-
-            response_card = container(response_tab)
-                .height(Length::Fill)
-                .padding(10)
-                .width(Length::Fill)
-                .style(AppContainer::Rounded);
         }
 
         column![
@@ -269,7 +352,7 @@ impl Application for HomePage {
                 .height(Length::Fill)
                 .width(350),
                 column![
-                    url_input_bar(&self.url, self.is_requesting),
+                    url_input_bar(&self.pending_request.url, self.is_requesting),
                     Space::with_height(10),
                     match self.response {
                         Some(_) => create_tabs!(
@@ -291,15 +374,14 @@ impl Application for HomePage {
                             HomeEventMessage::OnRequestTabChange,
                             None,
                             None
-                        )
+                        ),
                     },
                     container("")
                         .width(Length::Fill)
                         .height(1)
                         .style(AppContainer::Hr),
                     Space::with_height(10),
-                    req_tab,
-                    response_card,
+                    conditional_container,
                 ]
                 .padding(24.0)
             ],
@@ -308,7 +390,6 @@ impl Application for HomePage {
     }
 }
 
-async fn send_request(url: String) -> anyhow::Result<FalconResponse> {
-    let builder = RequestBuilder::new().url(url).build();
-    builder.send().await
+async fn send_request(pending_request: PendingRequest) -> anyhow::Result<FalconResponse> {
+    pending_request.send().await
 }

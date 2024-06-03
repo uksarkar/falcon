@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.86"
+chrono = "0.4.38"
 cookie = "0.18.1"
 directories = "5.0.1"
 iced = { version = "0.12.1", features = ["svg", "image", "tokio"] }
