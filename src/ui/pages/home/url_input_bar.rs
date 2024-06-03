@@ -7,7 +7,18 @@ use crate::ui::app_theme::{AppBtn, AppContainer, AppInput};
 
 use super::HomeEventMessage;
 
-pub fn url_input_bar(url: &str) -> Container<'static, HomeEventMessage, Theme, Renderer> {
+pub fn url_input_bar(
+    url: &str,
+    is_requesting: bool,
+) -> Container<'static, HomeEventMessage, Theme, Renderer> {
+    let mut button = button(if is_requesting { "Sending" } else { "Send" })
+        .style(AppBtn::Primary)
+        .padding(Padding::from([5, 15]));
+
+    if !is_requesting {
+        button = button.on_press(HomeEventMessage::SendRequest);
+    }
+
     container(
         row![
             text("Get"),
@@ -16,10 +27,7 @@ pub fn url_input_bar(url: &str) -> Container<'static, HomeEventMessage, Theme, R
                 .width(Length::Fill)
                 .on_input(HomeEventMessage::UrlInput),
             Space::with_width(10),
-            button("Send")
-                .style(AppBtn::Primary)
-                .padding(Padding::from([5, 15]))
-                .on_press(HomeEventMessage::SendRequest),
+            button,
         ]
         .align_items(iced::Alignment::Center),
     )

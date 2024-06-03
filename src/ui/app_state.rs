@@ -1,4 +1,4 @@
-use iced::{Element, Sandbox};
+use iced::{Application, Command, Element, Theme};
 
 use super::{
     app_component::AppComponent,
@@ -22,23 +22,28 @@ impl AppState {
         AppState {
             theme: AppTheme::default(),
             route: Route::Home,
-            home_state: HomePage::new(),
-            profile_state: AboutPage::new(),
+            home_state: HomePage::new(()).0,
+            profile_state: AboutPage::new(()).0,
         }
     }
 
-    fn update(&mut self, message: MessageBus) {
+    fn update(&mut self, message: MessageBus) -> Command<MessageBus> {
         match message {
             MessageBus::NavigateTo(route) => {
                 self.route = route;
+                Command::none()
             }
             MessageBus::HomeMessage(msg) => match msg {
-                HomeEventMessage::NavigateTo(route) => self.route = route,
-                _ => self.home_state.update(msg),
+                HomeEventMessage::NavigateTo(route) => {
+                    self.route = route;
+                    Command::none()
+                },
+                _ => self.home_state.update(msg).map(MessageBus::HomeMessage),
             },
             MessageBus::SetTheme(theme) => {
                 self.theme = theme.clone();
                 self.home_state.set_theme(theme);
+                Command::none()
             }
         }
     }
@@ -51,15 +56,18 @@ impl AppState {
     }
 }
 
-impl Sandbox for AppState {
+impl Application for AppState {
     type Message = MessageBus;
+    type Executor = iced::executor::Default;
+    type Theme = Theme;
+    type Flags = ();
+
+    fn new(_flags: ()) -> (AppState, Command<Self::Message>) {
+        (AppState::new(), Command::none())
+    }
 
     fn theme(&self) -> iced::Theme {
         self.theme.theme()
-    }
-
-    fn new() -> Self {
-        AppState::new()
     }
 
     fn title(&self) -> String {
@@ -69,8 +77,8 @@ impl Sandbox for AppState {
         }
     }
 
-    fn update(&mut self, message: Self::Message) {
-        self.update(message);
+    fn update(&mut self, message: Self::Message) -> Command::<Self::Message> {
+        self.update(message)
     }
 
     fn view(&self) -> Element<Self::Message> {

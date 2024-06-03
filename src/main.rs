@@ -8,7 +8,8 @@ mod constants;
 use ui::app_state::AppState;
 use utils::app::app_config;
 
-pub fn main() -> iced::Result {
+#[tokio::main]
+pub async fn main() -> iced::Result {
     println!("{:#?}", app_config());
 
     AppState::run(Settings {

@@ -2,7 +2,8 @@ use iced::widget::svg::Handle;
 use iced::widget::{
     button, column, container, mouse_area, pick_list, row, svg, text, Column, Space,
 };
-use iced::{Element, Length, Padding, Sandbox};
+use iced::{Application, Command, Element, Length, Padding, Theme};
+use reqwest::Method;
 use url_input_bar::url_input_bar;
 
 use crate::ui::app_component::AppComponent;
@@ -11,6 +12,7 @@ use crate::ui::elements::tabs::Tabs;
 use crate::ui::message_bus::Route;
 use crate::utils::db::{Project, Projects};
 use crate::utils::helpers::page_title;
+use crate::utils::request::{FalconResponse, RequestBuilder};
 use crate::{create_tabs, ui::elements::tabs::TabNode};
 
 mod url_input_bar;
@@ -18,9 +20,12 @@ mod url_input_bar;
 pub struct HomePage {
     theme: Option<AppTheme>,
     url: String,
+    method: Method,
     request_tabs: Tabs,
     response_tabs: Tabs,
     projects: Projects,
+    response: Option<FalconResponse>,
+    is_requesting: bool,
 }
 
 impl Default for HomePage {
@@ -34,6 +39,9 @@ impl Default for HomePage {
             ),
             response_tabs: Tabs::new(vec!["Header", "Body", "Cookies"], "Body"),
             projects: Projects::new(),
+            response: None,
+            is_requesting: false,
+            method: Method::GET
         }
     }
 }
@@ -48,6 +56,9 @@ pub enum HomeEventMessage {
     SendRequest,
     NewProject(String),
     OnProjectChange(Project),
+    RequestFinished(FalconResponse),
+    RequestErr(String),
+    OnRequestMethodChanged(Method),
 }
 
 impl AppComponent for HomePage {
@@ -64,29 +75,40 @@ impl AppComponent for HomePage {
     }
 }
 
-impl Sandbox for HomePage {
+impl Application for HomePage {
     type Message = HomeEventMessage;
+    type Executor = iced::executor::Default;
+    type Theme = Theme;
+    type Flags = ();
 
-    fn new() -> Self {
-        HomePage::default()
+    fn new(_flags: ()) -> (HomePage, Command<Self::Message>) {
+        (HomePage::default(), Command::none())
     }
 
     fn title(&self) -> String {
         page_title("Home")
     }
 
-    fn update(&mut self, message: Self::Message) {
-        match message {
-            HomeEventMessage::UrlInput(url) => self.url = url,
+    fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
+        let command: Option<Command<Self::Message>> = match message {
+            HomeEventMessage::UrlInput(url) => {
+                self.url = url;
+                self.response = None;
+                self.request_tabs.activate();
+                None
+            }
             HomeEventMessage::OnRequestTabChange(node) => {
                 self.request_tabs.set_active(&node.label);
                 self.request_tabs.activate();
+                None
             }
             HomeEventMessage::OnResponseTabChange(node) => {
                 self.response_tabs.set_active(&node.label);
+                None
             }
             HomeEventMessage::MinimizeRequestTabs => {
                 self.request_tabs.toggle_activation();
+                None
             }
             HomeEventMessage::NewProject(name) => {
                 match self.projects.add(Project {
@@ -96,13 +118,41 @@ impl Sandbox for HomePage {
                 }) {
                     Ok(()) => (),
                     Err(e) => println!("{:<8}{}", "DB: ", e),
-                }
+                };
+                None
             }
             HomeEventMessage::OnProjectChange(project) => {
                 self.projects.set_active(&project.id);
+                None
             }
-            _ => (),
+            HomeEventMessage::SendRequest => {
+                self.is_requesting = true;
+                Some(Command::perform(
+                    send_request(self.url.clone()),
+                    |response| match response {
+                        Ok(res) => HomeEventMessage::RequestFinished(res),
+                        Err(err) => HomeEventMessage::RequestErr(err.to_string())
+                    },
+                ))
+            }
+            HomeEventMessage::RequestFinished(res) => {
+                self.response = Some(res);
+                self.is_requesting = false;
+                None
+            }
+            HomeEventMessage::RequestErr(msg) => {
+                self.is_requesting = false;
+                println!("Request failed: {}", msg);
+                None
+            }
+            _ => None,
         };
+
+        if let Some(cmd) = command {
+            return cmd;
+        }
+
+        Command::none()
     }
 
     fn view(&self) -> Element<Self::Message> {
@@ -122,12 +172,51 @@ impl Sandbox for HomePage {
                     }
                 ])
                 .padding(10)
-                .height(330)
+                .height(Length::Fill)
                 .width(Length::Fill)
                 .style(AppContainer::Rounded),
             );
 
             req_tab = req_tab.push(Space::with_height(10));
+        }
+
+        let mut response_card = container("");
+
+        if let Some(response) = self.response.clone() {
+            let mut response_tab = Column::new();
+
+            response_tab = response_tab.push(row![
+                text("Response"),
+                Space::with_width(Length::Fill),
+                text("Status: "),
+                text(response.status_code),
+                Space::with_width(10),
+                text(format!("{}ms", response.duration.as_millis())),
+                Space::with_width(10),
+                text(format!("Size: {}kb", response.size_kb)),
+            ]);
+
+            response_tab = response_tab.push(
+                container("")
+                    .width(Length::Fill)
+                    .height(1)
+                    .style(AppContainer::Hr),
+            );
+
+            response_tab = response_tab.push(create_tabs!(
+                self.response_tabs,
+                HomeEventMessage::OnResponseTabChange,
+                None,
+                None
+            ));
+
+            response_tab = response_tab.push(container(text(response.body)).padding(10));
+
+            response_card = container(response_tab)
+                .height(Length::Fill)
+                .padding(10)
+                .width(Length::Fill)
+                .style(AppContainer::Rounded);
         }
 
         column![
@@ -180,58 +269,46 @@ impl Sandbox for HomePage {
                 .height(Length::Fill)
                 .width(350),
                 column![
-                    url_input_bar(&self.url),
+                    url_input_bar(&self.url, self.is_requesting),
                     Space::with_height(10),
-                    create_tabs!(
-                        self.request_tabs,
-                        HomeEventMessage::OnRequestTabChange,
-                        Some(HomeEventMessage::MinimizeRequestTabs),
-                        Some(if self.request_tabs.is_active() {
-                            container("-")
-                                .padding(Padding::from([5, 10]))
-                                .style(AppContainer::Outlined)
-                        } else {
-                            container("+")
-                                .padding(Padding::from([5, 10]))
-                                .style(AppContainer::Outlined)
-                        })
-                    ),
+                    match self.response {
+                        Some(_) => create_tabs!(
+                            self.request_tabs,
+                            HomeEventMessage::OnRequestTabChange,
+                            Some(HomeEventMessage::MinimizeRequestTabs),
+                            Some(if self.request_tabs.is_active() {
+                                container("-")
+                                    .padding(Padding::from([5, 10]))
+                                    .style(AppContainer::Outlined)
+                            } else {
+                                container("+")
+                                    .padding(Padding::from([5, 10]))
+                                    .style(AppContainer::Outlined)
+                            })
+                        ),
+                        None => create_tabs!(
+                            self.request_tabs,
+                            HomeEventMessage::OnRequestTabChange,
+                            None,
+                            None
+                        )
+                    },
                     container("")
                         .width(Length::Fill)
                         .height(1)
                         .style(AppContainer::Hr),
                     Space::with_height(10),
                     req_tab,
-                    container(column![
-                        row![
-                            text("Response"),
-                            Space::with_width(Length::Fill),
-                            text("Status: "),
-                            text("Created 200"),
-                            Space::with_width(10),
-                            text("50ms"),
-                            Space::with_width(10),
-                            text("Size: 50kb"),
-                        ],
-                        container("")
-                            .width(Length::Fill)
-                            .height(1)
-                            .style(AppContainer::Hr),
-                        create_tabs!(
-                            self.response_tabs,
-                            HomeEventMessage::OnResponseTabChange,
-                            None,
-                            None
-                        ),
-                    ])
-                    .height(Length::Fill)
-                    .padding(10)
-                    .width(Length::Fill)
-                    .style(AppContainer::Rounded),
+                    response_card,
                 ]
                 .padding(24.0)
             ],
         ]
         .into()
     }
+}
+
+async fn send_request(url: String) -> anyhow::Result<FalconResponse> {
+    let builder = RequestBuilder::new().url(url).build();
+    builder.send().await
 }
