@@ -1,16 +1,34 @@
 use reqwest::cookie::Jar;
 use reqwest::header::HeaderMap;
 use reqwest::{Client, Method, StatusCode};
+use std::fmt::Display;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use std::{collections::HashMap, marker::PhantomData};
+
+use crate::utils::helpers::format_duration;
+
+#[derive(Debug, Clone)]
+pub struct FalconDuration(Duration);
+
+impl From<Duration> for FalconDuration {
+    fn from(value: Duration) -> Self {
+        Self(value)
+    }
+}
+
+impl Display for FalconDuration {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", format_duration(self.0))
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct FalconResponse {
     pub status_code: StatusCode,
     pub body: String,
     pub headers: HeaderMap,
-    pub duration: Duration,
+    pub duration: FalconDuration,
     pub size_kb: f64
 }
 
@@ -61,7 +79,7 @@ impl PendingRequest {
 
         Ok(FalconResponse {
             body,
-            duration,
+            duration: duration.into(),
             headers,
             size_kb,
             status_code

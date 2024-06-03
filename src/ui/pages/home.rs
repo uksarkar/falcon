@@ -191,7 +191,7 @@ impl Application for HomePage {
                 text("Status: "),
                 text(response.status_code),
                 Space::with_width(10),
-                text(format!("{}ms", response.duration.as_millis())),
+                text(response.duration),
                 Space::with_width(10),
                 text(format!("Size: {}kb", response.size_kb)),
             ]);
