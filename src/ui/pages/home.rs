@@ -29,12 +29,14 @@ pub struct HomePage {
     projects: Projects,
     response: Option<FalconResponse>,
     is_requesting: bool,
+    sidebar_closed: bool,
 }
 
 impl Default for HomePage {
     fn default() -> Self {
         Self {
             theme: Default::default(),
+            sidebar_closed: Default::default(),
             request_tabs: Tabs::new(
                 vec!["Query", "Header", "Body", "Authorization", "Cookies"],
                 "Query",
@@ -64,6 +66,7 @@ pub enum HomeEventMessage {
     OnRequestItemKeyInput(PendingRequestItem, usize, String),
     OnRequestItemValueInput(PendingRequestItem, usize, String),
     RemoveRequestItem(PendingRequestItem, usize),
+    ToggleSidebar,
 }
 
 impl AppComponent for HomePage {
@@ -96,6 +99,10 @@ impl Application for HomePage {
 
     fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
         let command: Option<Command<Self::Message>> = match message {
+            HomeEventMessage::ToggleSidebar => {
+                self.sidebar_closed = !self.sidebar_closed;
+                None
+            }
             HomeEventMessage::UrlInput(url) => {
                 self.pending_request.set_url(url);
                 self.response = None;
@@ -186,6 +193,27 @@ impl Application for HomePage {
                 .push(response_tab_container(response, &self.response_tabs));
         }
 
+        let sidebar = if self.sidebar_closed {
+            container("")
+        } else {
+            container(column![
+                text("Side bar"),
+                text("list items"),
+                Space::with_height(Length::Fill),
+                row![
+                    Space::with_width(Length::Fill),
+                    mouse_area(text(env!("CARGO_PKG_VERSION")))
+                        .interaction(iced::mouse::Interaction::Pointer)
+                        .on_press(HomeEventMessage::NavigateTo(Route::Profile)),
+                    Space::with_width(Length::Fill)
+                ]
+                .width(iced::Length::Fill),
+            ])
+            .style(AppContainer::Flat)
+            .height(Length::Fill)
+            .width(350)
+        };
+
         column![
             container(
                 row![
@@ -197,7 +225,20 @@ impl Application for HomePage {
                         .height(30)
                     )
                     .padding(Padding::from([0.0, 5.0])),
-                    container("Layout").padding(Padding::from([0.0, 5.0])),
+                    container(
+                        mouse_area(
+                            svg(Handle::from_memory(if self.sidebar_closed {
+                                include_bytes!("../../../assets/layout-opened.svg").as_slice()
+                            } else {
+                                include_bytes!("../../../assets/layout-closed.svg").as_slice()
+                            }))
+                            .width(20)
+                            .height(20)
+                        )
+                        .interaction(iced::mouse::Interaction::Pointer)
+                        .on_press(HomeEventMessage::ToggleSidebar)
+                    )
+                    .padding(Padding::from([0.0, 5.0])),
                     Space::with_width(5),
                     pick_list(self.projects.clone(), self.projects.active(), |proj| {
                         HomeEventMessage::OnProjectChange(proj)
@@ -219,22 +260,7 @@ impl Application for HomePage {
                 .height(1)
                 .style(AppContainer::Hr),
             row![
-                container(column![
-                    text("Side bar"),
-                    text("list items"),
-                    Space::with_height(Length::Fill),
-                    row![
-                        Space::with_width(Length::Fill),
-                        mouse_area(text(env!("CARGO_PKG_VERSION")))
-                            .interaction(iced::mouse::Interaction::Pointer)
-                            .on_press(HomeEventMessage::NavigateTo(Route::Profile)),
-                        Space::with_width(Length::Fill)
-                    ]
-                    .width(iced::Length::Fill),
-                ])
-                .style(AppContainer::Flat)
-                .height(Length::Fill)
-                .width(350),
+                sidebar,
                 column![
                     url_input_bar(&self.pending_request.url, self.is_requesting),
                     Space::with_height(10),

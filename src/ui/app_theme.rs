@@ -212,7 +212,10 @@ impl pick_list::StyleSheet for AppSelect {
             text_color: palette.text,
             placeholder_color: darken_color(palette.text, 10),
             handle_color: darken_color(palette.text, 10),
-            background: iced::Background::Color(Color::from_rgb(237.0, 233.0, 220.0)),
+            background: iced::Background::Color(darken_color(
+                Color::from_rgb(237.0, 233.0, 220.0),
+                5,
+            )),
             border: Border::default(),
         }
     }
