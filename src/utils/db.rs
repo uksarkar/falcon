@@ -1,5 +1,3 @@
-use std::borrow::Borrow;
-use std::ops::Deref;
 use std::{fmt::Display, fs};
 use std::fs::File;
 use std::io::Read;
@@ -8,10 +6,11 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::ui::elements::select_options::{SelectItems, SelectOption};
+
 use super::app::app_config;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-#[derive(PartialEq)]
 pub struct Project {
     pub name: String,
     pub is_active: bool,
@@ -28,17 +27,18 @@ impl Default for Project {
     }
 }
 
-impl Display for Project {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.name)
+impl Into<SelectOption<Uuid>> for Project {
+    fn into(self) -> SelectOption<Uuid> {
+        SelectOption {
+            label: self.name,
+            value: self.id
+        }
     }
 }
 
-impl Deref for Projects {
-    type Target = Vec<Project>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.items
+impl Display for Project {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.name)
     }
 }
 
@@ -48,9 +48,9 @@ pub struct Projects {
     items: Vec<Project>,
 }
 
-impl Borrow<[Project]> for Projects {
-    fn borrow(&self) -> &[Project] {
-        &self.items
+impl Into<SelectItems<Uuid>> for &Projects {
+    fn into(self) -> SelectItems<Uuid> {
+        SelectItems(<Vec<Project> as Clone>::clone(&self.items).into_iter().map(|project| project.into()).collect())
     }
 }
 
@@ -96,6 +96,18 @@ impl Projects {
         self.items.push(project);
 
         self.sync()
+    }
+
+    pub fn into_options(&self) -> SelectItems<Uuid> {
+        self.into()
+    }
+
+    pub fn selected_project(&self) -> Option<SelectOption<Uuid>> {
+        if let Some(active) = self.active() {
+            return Some(active.into());
+        }
+        
+        None
     }
 }
 

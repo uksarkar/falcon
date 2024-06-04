@@ -7,6 +7,7 @@ use request_tabs_block::request_tab_container;
 use reqwest::Method;
 use response_tabs_block::response_tab_container;
 use url_input_bar::url_input_bar;
+use uuid::Uuid;
 
 use crate::ui::app_component::AppComponent;
 use crate::ui::app_theme::{AppBtn, AppContainer, AppSelect, AppTheme};
@@ -59,7 +60,7 @@ pub enum HomeEventMessage {
     MinimizeRequestTabs,
     SendRequest,
     NewProject(String),
-    OnProjectChange(Project),
+    OnProjectChange(Uuid),
     RequestFinished(FalconResponse),
     RequestErr(String),
     OnRequestMethodChanged(Method),
@@ -133,8 +134,8 @@ impl Application for HomePage {
                 };
                 None
             }
-            HomeEventMessage::OnProjectChange(project) => {
-                self.projects.set_active(&project.id);
+            HomeEventMessage::OnProjectChange(id) => {
+                self.projects.set_active(&id);
                 None
             }
             HomeEventMessage::SendRequest => {
@@ -167,6 +168,10 @@ impl Application for HomePage {
             }
             HomeEventMessage::RemoveRequestItem(item, index) => {
                 self.pending_request.remove_item(item, index);
+                None
+            }
+            HomeEventMessage::OnRequestMethodChanged(method) => {
+                self.pending_request.set_method(method);
                 None
             }
             _ => None,
@@ -240,8 +245,8 @@ impl Application for HomePage {
                     )
                     .padding(Padding::from([0.0, 5.0])),
                     Space::with_width(5),
-                    pick_list(self.projects.clone(), self.projects.active(), |proj| {
-                        HomeEventMessage::OnProjectChange(proj)
+                    pick_list(self.projects.into_options(), self.projects.selected_project(), |item| {
+                        HomeEventMessage::OnProjectChange(item.value)
                     })
                     .style(AppSelect::Card),
                     Space::with_width(10),
@@ -262,7 +267,7 @@ impl Application for HomePage {
             row![
                 sidebar,
                 column![
-                    url_input_bar(&self.pending_request.url, self.is_requesting),
+                    url_input_bar(&self.pending_request.url, self.is_requesting, &self.pending_request.method),
                     Space::with_height(10),
                     match self.response {
                         Some(_) => create_tabs!(

@@ -59,7 +59,7 @@ pub struct PendingRequest {
 impl Default for PendingRequest {
     fn default() -> Self {
         Self {
-            url: Default::default(),
+            url: "https://".to_string(),
             method: Default::default(),
             headers: vec![("".to_string(), "".to_string())],
             cookies: vec![("".to_string(), "".to_string())],
