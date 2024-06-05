@@ -69,7 +69,11 @@ pub enum HomeEventMessage {
 
 impl HomePage {
     fn pending_request(&self) -> (String, PendingRequest) {
-        if let Some(current) = self.projects.active().and_then(|p| p.current_request().map(|(s, r)| (s.clone(), r.clone()))) {
+        if let Some(current) = self
+            .projects
+            .active()
+            .and_then(|p| p.current_request().map(|(s, r)| (s.clone(), r.clone())))
+        {
             (current.0.clone(), current.1.clone())
         } else {
             ("root".to_string(), PendingRequest::default())
@@ -208,14 +212,13 @@ impl Application for HomePage {
         Command::none()
     }
 
-
     fn view(&self) -> Element<Self::Message> {
         let mut conditional_container = Column::new();
         let (folder, pending_request) = self.pending_request();
 
         if let Some(tab) = self.request_tabs.get_active() {
-            conditional_container = conditional_container
-                .push(request_tab_container(&tab.label, &pending_request));
+            conditional_container =
+                conditional_container.push(request_tab_container(&tab.label, &pending_request));
         }
 
         if let Some(response) = self.response.clone() {
@@ -255,28 +258,37 @@ impl Application for HomePage {
                         .width(30)
                         .height(30)
                     )
-                    .padding(Padding::from([0.0, 5.0])),
-                    container(
-                        mouse_area(
-                            svg(Handle::from_memory(if self.sidebar_closed {
-                                include_bytes!("../../../assets/layout-opened.svg").as_slice()
-                            } else {
-                                include_bytes!("../../../assets/layout-closed.svg").as_slice()
-                            }))
-                            .width(20)
-                            .height(20)
-                        )
-                        .interaction(iced::mouse::Interaction::Pointer)
-                        .on_press(HomeEventMessage::ToggleSidebar)
+                    .padding(Padding::from([0.0, 10.0])),
+                    button(
+                        svg(Handle::from_memory(if self.sidebar_closed {
+                            include_bytes!("../../../assets/layout-opened.svg").as_slice()
+                        } else {
+                            include_bytes!("../../../assets/layout-closed.svg").as_slice()
+                        }))
+                        .width(20)
+                        .height(20)
                     )
-                    .padding(Padding::from([0.0, 5.0])),
-                    Space::with_width(5),
+                    .style(AppBtn::Basic)
+                    .padding(5)
+                    .on_press(HomeEventMessage::ToggleSidebar),
+                    Space::with_width(10),
                     pick_list(
                         self.projects.into_options(),
                         self.projects.selected_project(),
                         |item| { HomeEventMessage::OnProjectChange(item.value) }
                     )
                     .style(AppSelect::Card),
+                    Space::with_width(10),
+                    button(
+                        svg(Handle::from_memory(
+                            include_bytes!("../../../assets/pen-clip.svg").as_slice()
+                        ))
+                        .width(20)
+                        .height(20)
+                    )
+                    .style(AppBtn::Basic)
+                    .padding(5)
+                    .on_press(HomeEventMessage::ToggleSidebar),
                     Space::with_width(10),
                     button("New")
                         .style(AppBtn::Secondary)

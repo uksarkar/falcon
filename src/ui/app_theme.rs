@@ -83,6 +83,7 @@ impl AppTheme {
 pub enum AppBtn {
     Primary,
     Secondary,
+    Basic,
 }
 
 impl button::StyleSheet for AppBtn {
@@ -110,6 +111,16 @@ impl button::StyleSheet for AppBtn {
                 background: Some(iced::Background::Color(Color::TRANSPARENT)),
                 ..Default::default()
             },
+            AppBtn::Basic => button::Appearance {
+                border: Border {
+                    radius: 5.into(),
+                    width: 1.0,
+                    color: AppColor::BG_DARK.into()
+                },
+                text_color: style.palette().text,
+                background: Some(AppColor::BG_DARK.into()),
+                ..Default::default()
+            },
         }
     }
 
@@ -124,6 +135,11 @@ impl button::StyleSheet for AppBtn {
             AppBtn::Secondary => button::Appearance {
                 text_color: style.palette().background,
                 background: Some(iced::Background::Color(style.palette().primary)),
+                ..self.active(style)
+            },
+            AppBtn::Basic => button::Appearance {
+                text_color: style.palette().text,
+                background: Some(AppColor::BG_DARKER.into()),
                 ..self.active(style)
             },
         }
