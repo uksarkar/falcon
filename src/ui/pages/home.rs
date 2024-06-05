@@ -4,7 +4,6 @@ use iced::widget::{
 };
 use iced::{Application, Command, Element, Length, Padding, Theme};
 use request_tabs_block::request_tab_container;
-use reqwest::Method;
 use response_tabs_block::response_tab_container;
 use url_input_bar::url_input_bar;
 use uuid::Uuid;
@@ -15,7 +14,7 @@ use crate::ui::elements::tabs::Tabs;
 use crate::ui::message_bus::Route;
 use crate::utils::db::{Project, Projects};
 use crate::utils::helpers::page_title;
-use crate::utils::request::{FalconResponse, PendingRequest, PendingRequestItem};
+use crate::utils::request::{FalconResponse, HttpMethod, PendingRequest, PendingRequestItem};
 use crate::{create_tabs, ui::elements::tabs::TabNode};
 
 mod request_tabs_block;
@@ -63,7 +62,7 @@ pub enum HomeEventMessage {
     OnProjectChange(Uuid),
     RequestFinished(FalconResponse),
     RequestErr(String),
-    OnRequestMethodChanged(Method),
+    OnRequestMethodChanged(HttpMethod),
     OnRequestItemKeyInput(PendingRequestItem, usize, String),
     OnRequestItemValueInput(PendingRequestItem, usize, String),
     RemoveRequestItem(PendingRequestItem, usize),
