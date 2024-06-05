@@ -8,7 +8,9 @@ use response_tabs_block::response_tab_container;
 use url_input_bar::url_input_bar;
 use uuid::Uuid;
 
-use crate::constants::{APP_LOGO, LAYOUT_CLOSED_SVG, LAYOUT_OPENED_SVG, PEN_CLIP_SVG};
+use crate::constants::{
+    ADD_DOC_SVG, APP_LOGO, COMPRESS_SVG, CROSS_SMALL_SVG, DUPLICATE_SVG, EXPAND_SVG, LAYOUT_CLOSED_SVG, LAYOUT_OPENED_SVG, PEN_CLIP_SVG
+};
 use crate::ui::app_component::AppComponent;
 use crate::ui::app_theme::{AppBtn, AppContainer, AppSelect, AppTheme};
 use crate::ui::elements::tabs::Tabs;
@@ -235,16 +237,18 @@ impl Application for HomePage {
                 container(row![
                     text(folder),
                     Space::with_width(Length::Fill),
-                    button(
-                        svg(Handle::from_memory(
-                            include_bytes!("../../../assets/pen-clip.svg").as_slice()
-                        ))
-                        .width(20)
-                        .height(20)
-                    )
-                    .style(AppBtn::Basic)
-                    .padding(5)
-                    .on_press(HomeEventMessage::ToggleSidebar),
+                    button(svg(Handle::from_memory(ADD_DOC_SVG)).width(20).height(20))
+                        .style(AppBtn::Basic)
+                        .padding(5)
+                        .on_press(HomeEventMessage::ToggleSidebar),
+                    button(svg(Handle::from_memory(DUPLICATE_SVG)).width(20).height(20))
+                        .style(AppBtn::Basic)
+                        .padding(5)
+                        .on_press(HomeEventMessage::ToggleSidebar),
+                    button(svg(Handle::from_memory(CROSS_SMALL_SVG)).width(20).height(20))
+                        .style(AppBtn::Basic)
+                        .padding(5)
+                        .on_press(HomeEventMessage::ToggleSidebar),
                 ])
                 .style(AppContainer::FlatSecondary)
                 .padding(Padding::from([5, 0])),
@@ -288,14 +292,10 @@ impl Application for HomePage {
                     )
                     .style(AppSelect::Card),
                     Space::with_width(10),
-                    button(
-                        svg(Handle::from_memory(PEN_CLIP_SVG))
-                        .width(20)
-                        .height(20)
-                    )
-                    .style(AppBtn::Basic)
-                    .padding(5)
-                    .on_press(HomeEventMessage::ToggleSidebar),
+                    button(svg(Handle::from_memory(PEN_CLIP_SVG)).width(20).height(20))
+                        .style(AppBtn::Basic)
+                        .padding(5)
+                        .on_press(HomeEventMessage::ToggleSidebar),
                     Space::with_width(10),
                     button("New")
                         .style(AppBtn::Secondary)
@@ -325,15 +325,19 @@ impl Application for HomePage {
                             self.request_tabs,
                             HomeEventMessage::OnRequestTabChange,
                             Some(HomeEventMessage::MinimizeRequestTabs),
-                            Some(if self.request_tabs.is_active() {
-                                container("-")
-                                    .padding(Padding::from([5, 10]))
-                                    .style(AppContainer::Outlined)
-                            } else {
-                                container("+")
-                                    .padding(Padding::from([5, 10]))
-                                    .style(AppContainer::Outlined)
-                            })
+                            Some(
+                                container(
+                                    svg(Handle::from_memory(if self.request_tabs.is_active() {
+                                        EXPAND_SVG
+                                    } else {
+                                        COMPRESS_SVG
+                                    }))
+                                    .width(12)
+                                    .height(12)
+                                )
+                                .padding(5)
+                                .style(AppContainer::Outlined)
+                            )
                         ),
                         None => create_tabs!(
                             self.request_tabs,
