@@ -1,11 +1,11 @@
 use iced::{
-    widget::{button, container, row, text_input, Column, Container, Space},
+    widget::{button, container, row, svg, text_input, Column, Container, Space},
     Length, Padding, Renderer, Theme,
 };
+use iced::widget::svg::Handle;
 
 use crate::{
-    ui::app_theme::{AppBtn, AppContainer, AppInput},
-    utils::request::{PendingRequest, PendingRequestItem},
+    constants::TRASH_SVG, ui::app_theme::{AppBtn, AppContainer, AppInput}, utils::request::{PendingRequest, PendingRequestItem}
 };
 
 use super::HomeEventMessage;
@@ -69,9 +69,13 @@ fn key_value_input_row(
     let item_c1 = item.clone();
     let item_c2 = item.clone();
 
-    let mut remove_btn = button("-")
-        .style(AppBtn::Secondary)
-        .padding(Padding::from([5, 10]));
+    let mut remove_btn = button(
+        svg(Handle::from_memory(TRASH_SVG))
+        .width(20)
+        .height(20),
+    )
+    .style(AppBtn::Basic)
+    .padding(5);
 
     if enabled {
         remove_btn = remove_btn.on_press(HomeEventMessage::RemoveRequestItem(item, index));

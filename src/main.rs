@@ -1,3 +1,5 @@
+use std::env;
+
 use iced::{window, Application, Settings, Size};
 
 mod models;
@@ -11,6 +13,7 @@ use utils::app::app_config;
 #[tokio::main]
 pub async fn main() -> iced::Result {
     println!("{:#?}", app_config());
+    println!("{}", env::current_dir().unwrap().to_str().unwrap());
 
     AppState::run(Settings {
         window: window::Settings {

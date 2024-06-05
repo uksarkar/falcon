@@ -158,6 +158,7 @@ pub enum AppContainer {
     Hr,
     SuccessIndicator,
     Outlined,
+    FlatSecondary,
 }
 
 impl container::StyleSheet for AppContainer {
@@ -165,7 +166,7 @@ impl container::StyleSheet for AppContainer {
 
     fn appearance(&self, style: &Self::Style) -> container::Appearance {
         let border = match self {
-            AppContainer::Flat => Border::default(),
+            AppContainer::Flat | AppContainer::FlatSecondary => Border::default(),
             AppContainer::SuccessIndicator => Border::with_radius(2.0),
             AppContainer::Outlined => Border {
                 radius: 5.0.into(),
@@ -181,6 +182,7 @@ impl container::StyleSheet for AppContainer {
                 Some(iced::Background::Color(style.palette().success))
             }
             AppContainer::Outlined => Some(iced::Background::Color(iced::Color::TRANSPARENT)),
+            AppContainer::FlatSecondary => Some(AppColor::BG_LIGHT.into()),
             _ => Some(AppColor::BG_SECONDARY.into()),
         };
 

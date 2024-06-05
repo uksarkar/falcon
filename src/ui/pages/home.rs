@@ -8,6 +8,7 @@ use response_tabs_block::response_tab_container;
 use url_input_bar::url_input_bar;
 use uuid::Uuid;
 
+use crate::constants::{APP_LOGO, LAYOUT_CLOSED_SVG, LAYOUT_OPENED_SVG, PEN_CLIP_SVG};
 use crate::ui::app_component::AppComponent;
 use crate::ui::app_theme::{AppBtn, AppContainer, AppSelect, AppTheme};
 use crate::ui::elements::tabs::Tabs;
@@ -231,8 +232,22 @@ impl Application for HomePage {
             container("")
         } else {
             container(column![
-                text("Side bar"),
-                text("list items"),
+                container(row![
+                    text(folder),
+                    Space::with_width(Length::Fill),
+                    button(
+                        svg(Handle::from_memory(
+                            include_bytes!("../../../assets/pen-clip.svg").as_slice()
+                        ))
+                        .width(20)
+                        .height(20)
+                    )
+                    .style(AppBtn::Basic)
+                    .padding(5)
+                    .on_press(HomeEventMessage::ToggleSidebar),
+                ])
+                .style(AppContainer::FlatSecondary)
+                .padding(Padding::from([5, 0])),
                 Space::with_height(Length::Fill),
                 row![
                     Space::with_width(Length::Fill),
@@ -251,19 +266,13 @@ impl Application for HomePage {
         column![
             container(
                 row![
-                    container(
-                        svg(Handle::from_memory(
-                            include_bytes!("../../../assets/Logo.svg").as_slice()
-                        ))
-                        .width(30)
-                        .height(30)
-                    )
-                    .padding(Padding::from([0.0, 10.0])),
+                    container(svg(Handle::from_memory(APP_LOGO)).width(30).height(30))
+                        .padding(Padding::from([0.0, 10.0])),
                     button(
                         svg(Handle::from_memory(if self.sidebar_closed {
-                            include_bytes!("../../../assets/layout-opened.svg").as_slice()
+                            LAYOUT_OPENED_SVG
                         } else {
-                            include_bytes!("../../../assets/layout-closed.svg").as_slice()
+                            LAYOUT_CLOSED_SVG
                         }))
                         .width(20)
                         .height(20)
@@ -280,9 +289,7 @@ impl Application for HomePage {
                     .style(AppSelect::Card),
                     Space::with_width(10),
                     button(
-                        svg(Handle::from_memory(
-                            include_bytes!("../../../assets/pen-clip.svg").as_slice()
-                        ))
+                        svg(Handle::from_memory(PEN_CLIP_SVG))
                         .width(20)
                         .height(20)
                     )
