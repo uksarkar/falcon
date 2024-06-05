@@ -9,6 +9,52 @@ use iced::{
 
 use crate::utils::color::darken_color;
 
+const COLOR_BG_SECONDARY: (f32, f32, f32) = (237.0, 233.0, 220.0);
+
+struct AppColor {
+    rgb: (f32, f32, f32),
+    darken: Option<u8>,
+}
+
+impl AppColor {
+    pub const BG_SECONDARY: AppColor = AppColor {
+        rgb: COLOR_BG_SECONDARY,
+        darken: None
+    };
+    pub const BG_LIGHT: AppColor = AppColor {
+        rgb: COLOR_BG_SECONDARY,
+        darken: Some(2),
+    };
+    pub const BG_DARK: AppColor = AppColor {
+        rgb: COLOR_BG_SECONDARY,
+        darken: Some(5),
+    };
+    pub const BG_DARKER: AppColor = AppColor {
+        rgb: COLOR_BG_SECONDARY,
+        darken: Some(10)
+    };
+    pub const BG_DARKEST: AppColor = AppColor {
+        rgb: COLOR_BG_SECONDARY,
+        darken: Some(30)
+    };
+}
+
+impl Into<Color> for AppColor {
+    fn into(self) -> Color {
+        if let Some(darken) = self.darken {
+            darken_color(Color::from_rgb(self.rgb.0, self.rgb.1, self.rgb.2), darken)
+        } else {
+            Color::from_rgb(self.rgb.0, self.rgb.1, self.rgb.2)
+        }
+    }
+}
+
+impl Into<iced::Background> for AppColor {
+    fn into(self) -> iced::Background {
+        iced::Background::Color(self.into())
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub enum AppTheme {
     #[default]
@@ -119,9 +165,7 @@ impl container::StyleSheet for AppContainer {
                 Some(iced::Background::Color(style.palette().success))
             }
             AppContainer::Outlined => Some(iced::Background::Color(iced::Color::TRANSPARENT)),
-            _ => Some(iced::Background::Color(Color::from_rgb(
-                237.0, 233.0, 220.0,
-            ))),
+            _ => Some(AppColor::BG_SECONDARY.into()),
         };
 
         container::Appearance {
@@ -145,10 +189,7 @@ impl text_input::StyleSheet for AppInput {
 
     fn active(&self, style: &Self::Style) -> text_input::Appearance {
         text_input::Appearance {
-            background: iced::Background::Color(darken_color(
-                Color::from_rgb(237.0, 233.0, 220.0),
-                2,
-            )),
+            background: AppColor::BG_LIGHT.into(),
             border: Border::default(),
             icon_color: style.palette().primary,
         }
@@ -156,16 +197,13 @@ impl text_input::StyleSheet for AppInput {
 
     fn focused(&self, style: &Self::Style) -> text_input::Appearance {
         text_input::Appearance {
-            background: iced::Background::Color(darken_color(
-                Color::from_rgb(237.0, 233.0, 220.0),
-                5,
-            )),
+            background: AppColor::BG_DARK.into(),
             ..self.active(style)
         }
     }
 
     fn placeholder_color(&self, _style: &Self::Style) -> Color {
-        darken_color(Color::from_rgb(237.0, 233.0, 220.0), 30)
+        AppColor::BG_DARKEST.into()
     }
 
     fn value_color(&self, style: &Self::Style) -> Color {
@@ -212,20 +250,14 @@ impl pick_list::StyleSheet for AppSelect {
             text_color: palette.text,
             placeholder_color: darken_color(palette.text, 10),
             handle_color: darken_color(palette.text, 10),
-            background: iced::Background::Color(darken_color(
-                Color::from_rgb(237.0, 233.0, 220.0),
-                5,
-            )),
+            background: AppColor::BG_DARK.into(),
             border: Border::default(),
         }
     }
 
     fn hovered(&self, style: &<Self as pick_list::StyleSheet>::Style) -> pick_list::Appearance {
         pick_list::Appearance {
-            background: iced::Background::Color(darken_color(
-                Color::from_rgb(237.0, 233.0, 220.0),
-                10,
-            )),
+            background: AppColor::BG_DARKER.into(),
             ..self.active(style)
         }
     }
@@ -239,14 +271,14 @@ impl menu::StyleSheet for AppSelect {
 
         menu::Appearance {
             text_color: palette.text,
-            background: iced::Background::Color(Color::from_rgb(237.0, 233.0, 220.0)),
+            background: AppColor::BG_SECONDARY.into(),
             border: Border {
-                color: darken_color(Color::from_rgb(237.0, 233.0, 220.0), 10),
+                color: AppColor::BG_DARKER.into(),
                 width: 1.0,
-                radius: 5.0.into()
+                radius: 5.0.into(),
             },
             selected_text_color: palette.primary,
-            selected_background: iced::Background::Color(darken_color(Color::from_rgb(237.0, 233.0, 220.0), 10)),
+            selected_background: AppColor::BG_DARK.into(),
         }
     }
 }
