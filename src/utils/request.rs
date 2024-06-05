@@ -2,6 +2,7 @@ use reqwest::cookie::Jar;
 use reqwest::header::HeaderMap;
 use reqwest::{Client, Method, StatusCode};
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 use std::fmt::Display;
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime};
@@ -114,6 +115,7 @@ impl Display for HttpMethod {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct PendingRequest {
+    pub id: Uuid,
     pub url: String,
     pub method: HttpMethod,
     pub headers: Vec<(String, String)>,
@@ -124,6 +126,7 @@ pub struct PendingRequest {
 impl Default for PendingRequest {
     fn default() -> Self {
         Self {
+            id: Uuid::now_v7(),
             url: "https://".to_string(),
             method: Default::default(),
             headers: vec![("".to_string(), "".to_string())],

@@ -23,7 +23,6 @@ mod url_input_bar;
 
 pub struct HomePage {
     theme: Option<AppTheme>,
-    pending_request: PendingRequest,
     request_tabs: Tabs,
     response_tabs: Tabs,
     projects: Projects,
@@ -43,7 +42,6 @@ impl Default for HomePage {
             ),
             response_tabs: Tabs::new(vec!["Header", "Body", "Cookies"], "Body"),
             projects: Projects::new(),
-            pending_request: Default::default(),
             is_requesting: false,
             response: None,
         }
@@ -67,6 +65,16 @@ pub enum HomeEventMessage {
     OnRequestItemValueInput(PendingRequestItem, usize, String),
     RemoveRequestItem(PendingRequestItem, usize),
     ToggleSidebar,
+}
+
+impl HomePage {
+    fn pending_request(&self) -> (String, PendingRequest) {
+        if let Some(current) = self.projects.active().and_then(|p| p.current_request().map(|(s, r)| (s.clone(), r.clone()))) {
+            (current.0.clone(), current.1.clone())
+        } else {
+            ("root".to_string(), PendingRequest::default())
+        }
+    }
 }
 
 impl AppComponent for HomePage {
@@ -104,7 +112,9 @@ impl Application for HomePage {
                 None
             }
             HomeEventMessage::UrlInput(url) => {
-                self.pending_request.set_url(url);
+                if let Some(project) = self.projects.active_mut() {
+                    project.update_request_url(url);
+                }
                 self.response = None;
                 self.request_tabs.activate();
                 None
@@ -138,14 +148,19 @@ impl Application for HomePage {
                 None
             }
             HomeEventMessage::SendRequest => {
-                self.is_requesting = true;
-                Some(Command::perform(
-                    send_request(self.pending_request.clone()),
-                    |response| match response {
-                        Ok(res) => HomeEventMessage::RequestFinished(res),
-                        Err(err) => HomeEventMessage::RequestErr(err.to_string()),
-                    },
-                ))
+                if let Some(project) = self.projects.active() {
+                    if let Some(req) = project.current_request() {
+                        self.is_requesting = true;
+                        return Command::perform(send_request(req.1.clone()), |response| {
+                            match response {
+                                Ok(res) => HomeEventMessage::RequestFinished(res),
+                                Err(err) => HomeEventMessage::RequestErr(err.to_string()),
+                            }
+                        });
+                    }
+                }
+
+                None
             }
             HomeEventMessage::RequestFinished(res) => {
                 self.response = Some(res);
@@ -158,19 +173,29 @@ impl Application for HomePage {
                 None
             }
             HomeEventMessage::OnRequestItemKeyInput(item, index, name) => {
-                self.pending_request.update_item_key(item, index, name);
+                if let Some(project) = self.projects.active_mut() {
+                    project.update_request_item(item, index, name, true);
+                }
                 None
             }
             HomeEventMessage::OnRequestItemValueInput(item, index, val) => {
-                self.pending_request.update_item_value(item, index, val);
+                if let Some(project) = self.projects.active_mut() {
+                    project.update_request_item(item, index, val, false);
+                }
                 None
             }
             HomeEventMessage::RemoveRequestItem(item, index) => {
-                self.pending_request.remove_item(item, index);
+                if let Some(project) = self.projects.active_mut() {
+                    if let Some(req) = project.current_request_mut() {
+                        req.remove_item(item, index);
+                    }
+                }
                 None
             }
             HomeEventMessage::OnRequestMethodChanged(method) => {
-                self.pending_request.set_method(method);
+                if let Some(project) = self.projects.active_mut() {
+                    project.update_request_method(method);
+                }
                 None
             }
             _ => None,
@@ -183,12 +208,14 @@ impl Application for HomePage {
         Command::none()
     }
 
+
     fn view(&self) -> Element<Self::Message> {
         let mut conditional_container = Column::new();
+        let (folder, pending_request) = self.pending_request();
 
         if let Some(tab) = self.request_tabs.get_active() {
             conditional_container = conditional_container
-                .push(request_tab_container(&tab.label, &self.pending_request));
+                .push(request_tab_container(&tab.label, &pending_request));
         }
 
         if let Some(response) = self.response.clone() {
@@ -244,9 +271,11 @@ impl Application for HomePage {
                     )
                     .padding(Padding::from([0.0, 5.0])),
                     Space::with_width(5),
-                    pick_list(self.projects.into_options(), self.projects.selected_project(), |item| {
-                        HomeEventMessage::OnProjectChange(item.value)
-                    })
+                    pick_list(
+                        self.projects.into_options(),
+                        self.projects.selected_project(),
+                        |item| { HomeEventMessage::OnProjectChange(item.value) }
+                    )
                     .style(AppSelect::Card),
                     Space::with_width(10),
                     button("New")
@@ -266,7 +295,11 @@ impl Application for HomePage {
             row![
                 sidebar,
                 column![
-                    url_input_bar(&self.pending_request.url, self.is_requesting, &self.pending_request.method),
+                    url_input_bar(
+                        &pending_request.url,
+                        self.is_requesting,
+                        &pending_request.method
+                    ),
                     Space::with_height(10),
                     match self.response {
                         Some(_) => create_tabs!(
