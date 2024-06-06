@@ -7,12 +7,12 @@ use uuid::Uuid;
 
 use crate::ui::app_component::AppComponent;
 use crate::ui::app_theme::{AppContainer, AppTheme};
+use crate::ui::elements::tabs::TabNode;
 use crate::ui::elements::tabs::Tabs;
 use crate::ui::message_bus::Route;
 use crate::utils::db::{Project, Projects};
 use crate::utils::helpers::page_title;
 use crate::utils::request::{FalconResponse, HttpMethod, PendingRequest, PendingRequestItem};
-use crate::ui::elements::tabs::TabNode;
 
 mod request_and_response_card;
 mod request_tabs_block;
@@ -237,7 +237,7 @@ impl Application for HomePage {
             );
         };
 
-        base_row = base_row.push(request_and_response_card(self));
+        base_row = base_row.push(container(request_and_response_card(self)).padding(10));
 
         column![
             tob_bar(
@@ -245,10 +245,6 @@ impl Application for HomePage {
                 self.projects.selected_project(),
                 self.sidebar_closed,
             ),
-            container("")
-                .width(Length::Fill)
-                .height(1)
-                .style(AppContainer::Hr),
             base_row
         ]
         .into()
