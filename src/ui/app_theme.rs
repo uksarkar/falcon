@@ -7,11 +7,11 @@ use iced::{
     Border, Color, Theme,
 };
 
-use crate::utils::color::darken_color;
+use crate::{constants::{COLOR_BG_SECONDARY, COLOR_GREEN, COLOR_RED}, utils::color::darken_color};
 
-const COLOR_BG_SECONDARY: (f32, f32, f32) = (237.0, 233.0, 220.0);
 
-struct AppColor {
+#[derive(Clone)]
+pub struct AppColor {
     rgb: (f32, f32, f32),
     darken: Option<u8>,
 }
@@ -37,6 +37,14 @@ impl AppColor {
         rgb: COLOR_BG_SECONDARY,
         darken: Some(30)
     };
+    pub const GREEN: AppColor = AppColor {
+        rgb: COLOR_GREEN,
+        darken: None
+    };
+    pub const RED: AppColor = AppColor {
+        rgb: COLOR_RED,
+        darken: None
+    };
 }
 
 impl Into<Color> for AppColor {
@@ -44,7 +52,7 @@ impl Into<Color> for AppColor {
         if let Some(darken) = self.darken {
             darken_color(Color::from_rgb(self.rgb.0, self.rgb.1, self.rgb.2), darken)
         } else {
-            Color::from_rgb(self.rgb.0, self.rgb.1, self.rgb.2)
+            Color::from_rgba(self.rgb.0, self.rgb.1, self.rgb.2, 1.0)
         }
     }
 }
@@ -159,6 +167,8 @@ pub enum AppContainer {
     SuccessIndicator,
     Outlined,
     FlatSecondary,
+    BadgePrimary,
+    Bg(AppColor),
 }
 
 impl container::StyleSheet for AppContainer {
@@ -180,9 +190,11 @@ impl container::StyleSheet for AppContainer {
             AppContainer::Hr => Some(iced::Background::Color(style.palette().text)),
             AppContainer::SuccessIndicator => {
                 Some(iced::Background::Color(style.palette().success))
-            }
+            },
+            AppContainer::Bg(color) => Some(color.clone().into()),
             AppContainer::Outlined => Some(iced::Background::Color(iced::Color::TRANSPARENT)),
             AppContainer::FlatSecondary => Some(AppColor::BG_LIGHT.into()),
+            AppContainer::BadgePrimary => Some(AppColor::BG_DARKER.into()),
             _ => Some(AppColor::BG_SECONDARY.into()),
         };
 

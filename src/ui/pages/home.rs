@@ -22,6 +22,7 @@ mod sidebar_projects;
 mod sidebar_requests;
 mod tob_bar;
 mod url_input_bar;
+mod http_badge_column;
 
 pub struct HomePage {
     theme: Option<AppTheme>,

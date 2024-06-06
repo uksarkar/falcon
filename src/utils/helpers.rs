@@ -18,3 +18,19 @@ pub fn format_duration(duration: Duration) -> String {
         format!("{:.1}h", hours)
     }
 }
+
+pub fn ellipse_text(s: &str, max_chars: usize) -> String {
+    let mut end_idx = 0;
+    for (i, (idx, _)) in s.char_indices().enumerate() {
+        if i == max_chars {
+            break;
+        }
+        end_idx = idx + 1; // +1 to include the current character
+    }
+
+    if s.chars().count() > max_chars {
+        format!("{}...", &s[..end_idx])
+    } else {
+        s.to_string()
+    }
+}
