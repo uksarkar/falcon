@@ -1,5 +1,6 @@
 use iced::widget::{column, container, mouse_area, row, text, Row, Space};
 use iced::{Application, Command, Element, Length, Theme};
+use project_tabs_block::project_tabs_block;
 use request_and_response_card::request_and_response_card;
 use sidebar_envs::get_env_items;
 use sidebar_projects::get_sidebar_projects_items;
@@ -17,6 +18,7 @@ use crate::utils::helpers::page_title;
 use crate::utils::request::{FalconResponse, HttpMethod, PendingRequest, PendingRequestItem};
 
 mod http_badge_column;
+mod project_tabs_block;
 mod request_and_response_card;
 mod request_tabs_block;
 mod response_tabs_block;
@@ -84,7 +86,9 @@ pub enum HomeEventMessage {
     AddNewRequest(PendingRequest),
     SelectRequest(Uuid),
     DeleteRequest(Uuid),
-    onChangePageState(HomePageState),
+    OnChangePageState(HomePageState),
+    OnProjectNameInput(String),
+    OnProjectBaseUrlInput(String),
 }
 
 impl HomePage {
@@ -165,6 +169,7 @@ impl Application for HomePage {
                     Ok(()) => (),
                     Err(e) => println!("{:<8}{}", "DB: ", e),
                 };
+                self.state = HomePageState::Projects;
                 None
             }
             HomeEventMessage::OnProjectChange(id) => {
@@ -248,8 +253,20 @@ impl Application for HomePage {
                 }
                 None
             }
-            HomeEventMessage::onChangePageState(state) => {
+            HomeEventMessage::OnChangePageState(state) => {
                 self.state = state;
+                None
+            }
+            HomeEventMessage::OnProjectNameInput(name) => {
+                if let Some(project) = self.projects.active_mut() {
+                    project.name = name;
+                }
+                None
+            }
+            HomeEventMessage::OnProjectBaseUrlInput(url) => {
+                if let Some(project) = self.projects.active_mut() {
+                    project.base_url = Some(url);
+                }
                 None
             }
             _ => None,
@@ -297,7 +314,9 @@ impl Application for HomePage {
             HomePageState::Requests => {
                 base_row = base_row.push(container(request_and_response_card(self)).padding(10));
             }
-            HomePageState::Projects => {}
+            HomePageState::Projects => {
+                base_row = base_row.push(project_tabs_block(self));
+            }
             HomePageState::Envs => {}
         }
 

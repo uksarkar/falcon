@@ -15,6 +15,7 @@ use super::request::{HttpMethod, PendingRequest, PendingRequestItem};
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Project {
     pub name: String,
+    pub base_url: Option<String>,
     pub is_active: bool,
     pub id: Uuid,
     pub requests: HashMap<String, Vec<PendingRequest>>,
@@ -136,6 +137,7 @@ impl Default for Project {
             id: Uuid::now_v7(),
             requests,
             active_request_id: None,
+            base_url: None
         }
     }
 }

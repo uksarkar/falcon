@@ -36,7 +36,7 @@ pub fn get_sidebar_projects_items(
                 .width(Length::Fill)
                 .padding(Padding::from([2, 5])),
             )
-            .on_press(HomeEventMessage::onChangePageState(
+            .on_press(HomeEventMessage::OnChangePageState(
                 super::HomePageState::Requests,
             ))
             .interaction(iced::mouse::Interaction::Pointer),

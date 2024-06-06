@@ -45,12 +45,14 @@ pub fn tob_bar(
             button(svg(Handle::from_memory(PEN_CLIP_SVG)).width(20).height(20))
                 .style(AppBtn::Basic)
                 .padding(5)
-                .on_press(HomeEventMessage::onChangePageState(super::HomePageState::Projects)),
+                .on_press(HomeEventMessage::OnChangePageState(
+                    super::HomePageState::Projects
+                )),
             Space::with_width(10),
             button("New")
                 .style(AppBtn::Secondary)
                 .padding(Padding::from([5, 15]))
-                .on_press(HomeEventMessage::NewProject("Something new".to_string())),
+                .on_press(HomeEventMessage::NewProject("Unknown project".to_string())),
         ]
         .padding(8.0)
         .align_items(iced::Alignment::Center),

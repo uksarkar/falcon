@@ -19,7 +19,7 @@ pub fn sidebar_requests(page: &HomePage) -> Element<'static, HomeEventMessage> {
                     button(svg(Handle::from_memory(COG_API_SVG)).width(15).height(15))
                         .style(AppBtn::Basic)
                         .padding(3)
-                        .on_press(HomeEventMessage::onChangePageState(super::HomePageState::Envs)),
+                        .on_press(HomeEventMessage::OnChangePageState(super::HomePageState::Envs)),
                     container(text("Environments").size(10))
                         .style(AppContainer::Bg(AppColor::BG_DARKEST))
                         .padding(4),
