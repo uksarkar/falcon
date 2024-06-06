@@ -5,8 +5,10 @@ pub const FALCON_APPLICATION: &str = "falcon";
 
 // colors
 pub const COLOR_BG_SECONDARY: (f32, f32, f32) = (237.0, 233.0, 220.0);
-pub const COLOR_GREEN: (f32, f32, f32) = (24.0, 172.0, 0.0);
+pub const COLOR_GREEN: (f32, f32, f32) = (0.0, 172.0, 0.0);
 pub const COLOR_RED: (f32, f32, f32) = (172.0, 0.0, 0.0);
+pub const COLOR_PURPLE: (f32, f32, f32) = (117.0, 0.0, 172.0);
+pub const COLOR_YELLOW: (f32, f32, f32) = (172.0, 155.0, 0.0);
 
 // icons
 pub const APP_LOGO: &[u8] = include_bytes!("../assets/Logo.svg");

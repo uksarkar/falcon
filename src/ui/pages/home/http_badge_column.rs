@@ -18,6 +18,7 @@ pub struct HttpBadgeColumn<Message> {
     pub on_duplicate: Message,
     pub on_remove: Message,
     pub on_click: Message,
+    pub is_active: bool,
 }
 
 impl<'a, Message> Into<Container<'a, Message, Theme, Renderer>> for HttpBadgeColumn<Message>
@@ -27,8 +28,8 @@ where
     fn into(self) -> Container<'a, Message, Theme, Renderer> {
         let color = match self.method.to_string().as_str() {
             "Post" => AppColor::BG_DARKEST,
-            "Put" => AppColor::BG_DARKEST,
-            "Patch" => AppColor::BG_DARKEST,
+            "Put" => AppColor::PURPLE,
+            "Patch" => AppColor::YELLOW,
             "Delete" => AppColor::RED,
             _ => AppColor::GREEN,
         };
@@ -71,7 +72,11 @@ where
                     .align_items(iced::Alignment::Center),
                 )
                 .align_y(iced::alignment::Vertical::Center)
-                .style(AppContainer::FlatSecondary)
+                .style(if self.is_active {
+                    AppContainer::FlatSecondary
+                } else {
+                    AppContainer::Flat
+                })
                 .padding(Padding::from([5, 0])),
             )
             .on_press(self.on_click)

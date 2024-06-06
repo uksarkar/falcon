@@ -7,8 +7,10 @@ use iced::{
     Border, Color, Theme,
 };
 
-use crate::{constants::{COLOR_BG_SECONDARY, COLOR_GREEN, COLOR_RED}, utils::color::darken_color};
-
+use crate::{
+    constants::{COLOR_BG_SECONDARY, COLOR_GREEN, COLOR_PURPLE, COLOR_RED, COLOR_YELLOW},
+    utils::color::darken_color,
+};
 
 #[derive(Clone)]
 pub struct AppColor {
@@ -19,7 +21,7 @@ pub struct AppColor {
 impl AppColor {
     pub const BG_SECONDARY: AppColor = AppColor {
         rgb: COLOR_BG_SECONDARY,
-        darken: None
+        darken: None,
     };
     pub const BG_LIGHT: AppColor = AppColor {
         rgb: COLOR_BG_SECONDARY,
@@ -31,19 +33,27 @@ impl AppColor {
     };
     pub const BG_DARKER: AppColor = AppColor {
         rgb: COLOR_BG_SECONDARY,
-        darken: Some(10)
+        darken: Some(10),
     };
     pub const BG_DARKEST: AppColor = AppColor {
         rgb: COLOR_BG_SECONDARY,
-        darken: Some(30)
+        darken: Some(30),
     };
     pub const GREEN: AppColor = AppColor {
         rgb: COLOR_GREEN,
-        darken: None
+        darken: None,
     };
     pub const RED: AppColor = AppColor {
         rgb: COLOR_RED,
-        darken: None
+        darken: None,
+    };
+    pub const PURPLE: AppColor = AppColor {
+        rgb: COLOR_PURPLE,
+        darken: None,
+    };
+    pub const YELLOW: AppColor = AppColor {
+        rgb: COLOR_YELLOW,
+        darken: None,
     };
 }
 
@@ -123,7 +133,7 @@ impl button::StyleSheet for AppBtn {
                 border: Border {
                     radius: 5.into(),
                     width: 1.0,
-                    color: AppColor::BG_DARK.into()
+                    color: AppColor::BG_DARK.into(),
                 },
                 text_color: style.palette().text,
                 background: Some(AppColor::BG_DARK.into()),
@@ -190,7 +200,7 @@ impl container::StyleSheet for AppContainer {
             AppContainer::Hr => Some(iced::Background::Color(style.palette().text)),
             AppContainer::SuccessIndicator => {
                 Some(iced::Background::Color(style.palette().success))
-            },
+            }
             AppContainer::Bg(color) => Some(color.clone().into()),
             AppContainer::Outlined => Some(iced::Background::Color(iced::Color::TRANSPARENT)),
             AppContainer::FlatSecondary => Some(AppColor::BG_LIGHT.into()),
