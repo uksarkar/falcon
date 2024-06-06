@@ -1,14 +1,14 @@
-use iced::widget::svg::Handle;
-use iced::widget::{button, column, container, mouse_area, row, svg, text, tooltip, Row, Space};
+use iced::widget::{column, container, mouse_area, row, text, Row, Space};
 use iced::{Application, Command, Element, Length, Theme};
 use request_and_response_card::request_and_response_card;
+use sidebar_envs::get_env_items;
+use sidebar_projects::get_sidebar_projects_items;
 use sidebar_requests::sidebar_requests;
 use tob_bar::tob_bar;
 use uuid::Uuid;
 
-use crate::constants::{ADD_DOC_SVG, COG_API_SVG};
 use crate::ui::app_component::AppComponent;
-use crate::ui::app_theme::{AppBtn, AppColor, AppContainer, AppTheme};
+use crate::ui::app_theme::{AppContainer, AppTheme};
 use crate::ui::elements::tabs::TabNode;
 use crate::ui::elements::tabs::Tabs;
 use crate::ui::message_bus::Route;
@@ -26,6 +26,14 @@ mod sidebar_requests;
 mod tob_bar;
 mod url_input_bar;
 
+#[derive(Default, Debug, Clone)]
+pub enum HomePageState {
+    #[default]
+    Requests,
+    Projects,
+    Envs,
+}
+
 pub struct HomePage {
     theme: Option<AppTheme>,
     request_tabs: Tabs,
@@ -34,6 +42,7 @@ pub struct HomePage {
     response: Option<FalconResponse>,
     is_requesting: bool,
     sidebar_closed: bool,
+    state: HomePageState,
 }
 
 impl Default for HomePage {
@@ -41,6 +50,7 @@ impl Default for HomePage {
         Self {
             theme: Default::default(),
             sidebar_closed: Default::default(),
+            state: Default::default(),
             request_tabs: Tabs::new(
                 vec!["Query", "Header", "Body", "Authorization", "Cookies"],
                 "Query",
@@ -74,6 +84,7 @@ pub enum HomeEventMessage {
     AddNewRequest(PendingRequest),
     SelectRequest(Uuid),
     DeleteRequest(Uuid),
+    onChangePageState(HomePageState),
 }
 
 impl HomePage {
@@ -237,6 +248,10 @@ impl Application for HomePage {
                 }
                 None
             }
+            HomeEventMessage::onChangePageState(state) => {
+                self.state = state;
+                None
+            }
             _ => None,
         };
 
@@ -250,44 +265,17 @@ impl Application for HomePage {
     fn view(&self) -> Element<Self::Message> {
         let mut base_row = Row::new();
 
+        // handle sidebar based on the page state
         if !self.sidebar_closed {
+            let active_sidebar_items = match self.state {
+                HomePageState::Requests => sidebar_requests(self),
+                HomePageState::Projects => get_sidebar_projects_items(self),
+                HomePageState::Envs => get_env_items(self),
+            };
+
             base_row = base_row.push(
                 container(column![
-                    container(row![
-                        text("Default env").size(14),
-                        Space::with_width(Length::Fill),
-                        tooltip(
-                            button(svg(Handle::from_memory(COG_API_SVG)).width(15).height(15))
-                                .style(AppBtn::Basic)
-                                .padding(3)
-                                .on_press(HomeEventMessage::AddNewRequest(
-                                    PendingRequest::default()
-                                )),
-                            container(text("Environments").size(10))
-                                .style(AppContainer::Bg(AppColor::BG_DARKEST))
-                                .padding(4),
-                            tooltip::Position::FollowCursor
-                        ),
-                        tooltip(
-                            button(svg(Handle::from_memory(ADD_DOC_SVG)).width(15).height(15))
-                                .style(AppBtn::Basic)
-                                .padding(3)
-                                .on_press(HomeEventMessage::AddNewRequest(
-                                    PendingRequest::default()
-                                )),
-                            container(text("New request").size(10))
-                                .style(AppContainer::Bg(AppColor::BG_DARKEST))
-                                .padding(4),
-                            tooltip::Position::FollowCursor
-                        ),
-                    ])
-                    .style(AppContainer::FlatSecondary)
-                    .padding(2),
-                    container("")
-                        .style(AppContainer::Bg(AppColor::BG_DARKER))
-                        .height(1)
-                        .width(Length::Fill),
-                    sidebar_requests(self),
+                    active_sidebar_items,
                     Space::with_height(Length::Fill),
                     row![
                         Space::with_width(Length::Fill),
@@ -304,8 +292,16 @@ impl Application for HomePage {
             );
         };
 
-        base_row = base_row.push(container(request_and_response_card(self)).padding(10));
+        // handle contents based on the page state
+        match self.state {
+            HomePageState::Requests => {
+                base_row = base_row.push(container(request_and_response_card(self)).padding(10));
+            }
+            HomePageState::Projects => {}
+            HomePageState::Envs => {}
+        }
 
+        // build main view here
         column![
             tob_bar(
                 self.projects.into_options(),

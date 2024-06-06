@@ -45,7 +45,7 @@ pub fn tob_bar(
             button(svg(Handle::from_memory(PEN_CLIP_SVG)).width(20).height(20))
                 .style(AppBtn::Basic)
                 .padding(5)
-                .on_press(HomeEventMessage::ToggleSidebar),
+                .on_press(HomeEventMessage::onChangePageState(super::HomePageState::Projects)),
             Space::with_width(10),
             button("New")
                 .style(AppBtn::Secondary)

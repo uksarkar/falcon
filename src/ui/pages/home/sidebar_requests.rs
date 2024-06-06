@@ -1,14 +1,50 @@
-use iced::widget::{container, Column, Container};
+use iced::widget::svg::Handle;
+use iced::widget::{button, container, row, svg, text, tooltip, Column, Container, Space};
 use iced::{Element, Length};
 
-use crate::ui::app_theme::{AppColor, AppContainer};
+use crate::constants::{ADD_DOC_SVG, COG_API_SVG};
+use crate::ui::app_theme::{AppBtn, AppColor, AppContainer};
 use crate::utils::request::PendingRequest;
 
 use super::http_badge_column::HttpBadgeColumn;
 use super::{HomeEventMessage, HomePage};
 
 pub fn sidebar_requests(page: &HomePage) -> Element<'static, HomeEventMessage> {
-    let mut requests = Column::new();
+    let mut requests = Column::new()
+        .push(
+            container(row![
+                text("Default env").size(14),
+                Space::with_width(Length::Fill),
+                tooltip(
+                    button(svg(Handle::from_memory(COG_API_SVG)).width(15).height(15))
+                        .style(AppBtn::Basic)
+                        .padding(3)
+                        .on_press(HomeEventMessage::onChangePageState(super::HomePageState::Envs)),
+                    container(text("Environments").size(10))
+                        .style(AppContainer::Bg(AppColor::BG_DARKEST))
+                        .padding(4),
+                    tooltip::Position::FollowCursor
+                ),
+                tooltip(
+                    button(svg(Handle::from_memory(ADD_DOC_SVG)).width(15).height(15))
+                        .style(AppBtn::Basic)
+                        .padding(3)
+                        .on_press(HomeEventMessage::AddNewRequest(PendingRequest::default())),
+                    container(text("New request").size(10))
+                        .style(AppContainer::Bg(AppColor::BG_DARKEST))
+                        .padding(4),
+                    tooltip::Position::FollowCursor
+                ),
+            ])
+            .style(AppContainer::FlatSecondary)
+            .padding(2),
+        )
+        .push(
+            container("")
+                .style(AppContainer::Bg(AppColor::BG_DARKER))
+                .height(1)
+                .width(Length::Fill),
+        );
 
     if let Some(project) = page.projects.active() {
         for (_, reqs) in project.requests {
