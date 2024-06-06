@@ -70,6 +70,7 @@ pub enum HomeEventMessage {
     ToggleSidebar,
     AddNewRequest(PendingRequest),
     SelectRequest(Uuid),
+    DeleteRequest(Uuid),
 }
 
 impl HomePage {
@@ -216,6 +217,12 @@ impl Application for HomePage {
             HomeEventMessage::SelectRequest(id) => {
                 if let Some(project) = self.projects.active_mut() {
                     project.set_current_request(id)
+                }
+                None
+            }
+            HomeEventMessage::DeleteRequest(id) => {
+                if let Some(project) = self.projects.active_mut() {
+                    project.remove_request("root".into(), id);
                 }
                 None
             }

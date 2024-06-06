@@ -24,12 +24,12 @@ pub fn sidebar_requests(page: &HomePage) -> Element<'static, HomeEventMessage> {
                         url: req.url.clone(),
                         ..Default::default()
                     }),
-                    on_remove: HomeEventMessage::ToggleSidebar,
+                    on_remove: HomeEventMessage::DeleteRequest(req.id),
                     method: req.method,
                     is_active: page
                         .projects
                         .active()
-                        .is_some_and(|p| p.active_request_id.is_some_and(|id| id == req.id)),
+                        .is_some_and(|p| p.current_request_id().is_some_and(|id| id == req.id)),
                 }
                 .into();
 

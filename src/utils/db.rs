@@ -36,6 +36,10 @@ impl Project {
             })
     }
 
+    pub fn current_request_id(&self) -> Option<Uuid> {
+        self.current_request().and_then(|r| Some(r.1.id))
+    }
+
     pub fn current_request_mut(&mut self) -> Option<&mut PendingRequest> {
         if self.requests.is_empty() {
             let req = PendingRequest::default();
@@ -96,10 +100,27 @@ impl Project {
     }
 
     pub fn add_request(&mut self, folder: String, request: PendingRequest) {
+        self.set_current_request(request.id);
+        
         if let Some(reqs) = self.requests.get_mut(&folder) {
             reqs.push(request);
         } else {
             self.requests.insert(folder, vec![request]);
+        }
+    }
+
+    pub fn remove_request(&mut self, folder: String, id: Uuid) {
+        if let Some(reqs) = self.requests.get_mut(&folder) {
+            for (i, req) in reqs.iter().enumerate() {
+                if req.id == id {
+                    reqs.remove(i);
+                    break;
+                }
+            }
+        }
+
+        if let Some(id) = self.current_request_id() {
+            self.set_current_request(id);
         }
     }
 }
