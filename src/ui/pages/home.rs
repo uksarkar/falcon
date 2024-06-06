@@ -1,12 +1,14 @@
-use iced::widget::{column, container, mouse_area, row, text, Row, Space};
+use iced::widget::svg::Handle;
+use iced::widget::{button, column, container, mouse_area, row, svg, text, tooltip, Row, Space};
 use iced::{Application, Command, Element, Length, Theme};
 use request_and_response_card::request_and_response_card;
 use sidebar_requests::sidebar_requests;
 use tob_bar::tob_bar;
 use uuid::Uuid;
 
+use crate::constants::{ADD_DOC_SVG, COG_API_SVG};
 use crate::ui::app_component::AppComponent;
-use crate::ui::app_theme::{AppContainer, AppTheme};
+use crate::ui::app_theme::{AppBtn, AppColor, AppContainer, AppTheme};
 use crate::ui::elements::tabs::TabNode;
 use crate::ui::elements::tabs::Tabs;
 use crate::ui::message_bus::Route;
@@ -14,6 +16,7 @@ use crate::utils::db::{Project, Projects};
 use crate::utils::helpers::page_title;
 use crate::utils::request::{FalconResponse, HttpMethod, PendingRequest, PendingRequestItem};
 
+mod http_badge_column;
 mod request_and_response_card;
 mod request_tabs_block;
 mod response_tabs_block;
@@ -22,7 +25,6 @@ mod sidebar_projects;
 mod sidebar_requests;
 mod tob_bar;
 mod url_input_bar;
-mod http_badge_column;
 
 pub struct HomePage {
     theme: Option<AppTheme>,
@@ -242,6 +244,40 @@ impl Application for HomePage {
         if !self.sidebar_closed {
             base_row = base_row.push(
                 container(column![
+                    container(row![
+                        text("Default env").size(14),
+                        Space::with_width(Length::Fill),
+                        tooltip(
+                            button(svg(Handle::from_memory(COG_API_SVG)).width(15).height(15))
+                                .style(AppBtn::Basic)
+                                .padding(3)
+                                .on_press(HomeEventMessage::AddNewRequest(
+                                    PendingRequest::default()
+                                )),
+                            container(text("Environments").size(10))
+                                .style(AppContainer::Bg(AppColor::BG_DARKEST))
+                                .padding(4),
+                            tooltip::Position::FollowCursor
+                        ),
+                        tooltip(
+                            button(svg(Handle::from_memory(ADD_DOC_SVG)).width(15).height(15))
+                                .style(AppBtn::Basic)
+                                .padding(3)
+                                .on_press(HomeEventMessage::AddNewRequest(
+                                    PendingRequest::default()
+                                )),
+                            container(text("New request").size(10))
+                                .style(AppContainer::Bg(AppColor::BG_DARKEST))
+                                .padding(4),
+                            tooltip::Position::FollowCursor
+                        ),
+                    ])
+                    .style(AppContainer::FlatSecondary)
+                    .padding(2),
+                    container("")
+                        .style(AppContainer::Bg(AppColor::BG_DARKER))
+                        .height(1)
+                        .width(Length::Fill),
                     sidebar_requests(self),
                     Space::with_height(Length::Fill),
                     row![

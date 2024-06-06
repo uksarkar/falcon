@@ -22,3 +22,4 @@ pub const ANGLE_DOWN_SVG: &[u8] = include_bytes!("../assets/angle-down.svg");
 pub const COMPRESS_SVG: &[u8] = include_bytes!("../assets/compress.svg");
 pub const EXPAND_SVG: &[u8] = include_bytes!("../assets/expand.svg");
 pub const ADD_DOC_SVG: &[u8] = include_bytes!("../assets/add-document.svg");
+pub const COG_API_SVG: &[u8] = include_bytes!("../assets/api.svg");
