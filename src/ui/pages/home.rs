@@ -1,27 +1,26 @@
-use iced::widget::svg::Handle;
-use iced::widget::{
-    button, column, container, mouse_area, pick_list, row, svg, text, Column, Space,
-};
-use iced::{Application, Command, Element, Length, Padding, Theme};
-use request_tabs_block::request_tab_container;
-use response_tabs_block::response_tab_container;
-use url_input_bar::url_input_bar;
+use iced::widget::{column, container, mouse_area, row, text, Row, Space};
+use iced::{Application, Command, Element, Length, Theme};
+use request_and_response_card::request_and_response_card;
+use sidebar_requests::sidebar_requests;
+use tob_bar::tob_bar;
 use uuid::Uuid;
 
-use crate::constants::{
-    ADD_DOC_SVG, APP_LOGO, COMPRESS_SVG, CROSS_SMALL_SVG, DUPLICATE_SVG, EXPAND_SVG, LAYOUT_CLOSED_SVG, LAYOUT_OPENED_SVG, PEN_CLIP_SVG
-};
 use crate::ui::app_component::AppComponent;
-use crate::ui::app_theme::{AppBtn, AppContainer, AppSelect, AppTheme};
+use crate::ui::app_theme::{AppContainer, AppTheme};
 use crate::ui::elements::tabs::Tabs;
 use crate::ui::message_bus::Route;
 use crate::utils::db::{Project, Projects};
 use crate::utils::helpers::page_title;
 use crate::utils::request::{FalconResponse, HttpMethod, PendingRequest, PendingRequestItem};
-use crate::{create_tabs, ui::elements::tabs::TabNode};
+use crate::ui::elements::tabs::TabNode;
 
+mod request_and_response_card;
 mod request_tabs_block;
 mod response_tabs_block;
+mod sidebar_envs;
+mod sidebar_projects;
+mod sidebar_requests;
+mod tob_bar;
 mod url_input_bar;
 
 pub struct HomePage {
@@ -216,145 +215,41 @@ impl Application for HomePage {
     }
 
     fn view(&self) -> Element<Self::Message> {
-        let mut conditional_container = Column::new();
-        let (folder, pending_request) = self.pending_request();
+        let mut base_row = Row::new();
 
-        if let Some(tab) = self.request_tabs.get_active() {
-            conditional_container =
-                conditional_container.push(request_tab_container(&tab.label, &pending_request));
-        }
-
-        if let Some(response) = self.response.clone() {
-            conditional_container = conditional_container
-                .push(Space::with_height(10))
-                .push(response_tab_container(response, &self.response_tabs));
-        }
-
-        let sidebar = if self.sidebar_closed {
-            container("")
-        } else {
-            container(column![
-                container(row![
-                    text(folder),
-                    Space::with_width(Length::Fill),
-                    button(svg(Handle::from_memory(ADD_DOC_SVG)).width(20).height(20))
-                        .style(AppBtn::Basic)
-                        .padding(5)
-                        .on_press(HomeEventMessage::ToggleSidebar),
-                    button(svg(Handle::from_memory(DUPLICATE_SVG)).width(20).height(20))
-                        .style(AppBtn::Basic)
-                        .padding(5)
-                        .on_press(HomeEventMessage::ToggleSidebar),
-                    button(svg(Handle::from_memory(CROSS_SMALL_SVG)).width(20).height(20))
-                        .style(AppBtn::Basic)
-                        .padding(5)
-                        .on_press(HomeEventMessage::ToggleSidebar),
+        if !self.sidebar_closed {
+            base_row = base_row.push(
+                container(column![
+                    sidebar_requests(self),
+                    Space::with_height(Length::Fill),
+                    row![
+                        Space::with_width(Length::Fill),
+                        mouse_area(text(env!("CARGO_PKG_VERSION")))
+                            .interaction(iced::mouse::Interaction::Pointer)
+                            .on_press(HomeEventMessage::NavigateTo(Route::Profile)),
+                        Space::with_width(Length::Fill)
+                    ]
+                    .width(iced::Length::Fill),
                 ])
-                .style(AppContainer::FlatSecondary)
-                .padding(Padding::from([5, 0])),
-                Space::with_height(Length::Fill),
-                row![
-                    Space::with_width(Length::Fill),
-                    mouse_area(text(env!("CARGO_PKG_VERSION")))
-                        .interaction(iced::mouse::Interaction::Pointer)
-                        .on_press(HomeEventMessage::NavigateTo(Route::Profile)),
-                    Space::with_width(Length::Fill)
-                ]
-                .width(iced::Length::Fill),
-            ])
-            .style(AppContainer::Flat)
-            .height(Length::Fill)
-            .width(350)
+                .style(AppContainer::Flat)
+                .height(Length::Fill)
+                .width(350),
+            );
         };
 
+        base_row = base_row.push(request_and_response_card(self));
+
         column![
-            container(
-                row![
-                    container(svg(Handle::from_memory(APP_LOGO)).width(30).height(30))
-                        .padding(Padding::from([0.0, 10.0])),
-                    button(
-                        svg(Handle::from_memory(if self.sidebar_closed {
-                            LAYOUT_OPENED_SVG
-                        } else {
-                            LAYOUT_CLOSED_SVG
-                        }))
-                        .width(20)
-                        .height(20)
-                    )
-                    .style(AppBtn::Basic)
-                    .padding(5)
-                    .on_press(HomeEventMessage::ToggleSidebar),
-                    Space::with_width(10),
-                    pick_list(
-                        self.projects.into_options(),
-                        self.projects.selected_project(),
-                        |item| { HomeEventMessage::OnProjectChange(item.value) }
-                    )
-                    .style(AppSelect::Card),
-                    Space::with_width(10),
-                    button(svg(Handle::from_memory(PEN_CLIP_SVG)).width(20).height(20))
-                        .style(AppBtn::Basic)
-                        .padding(5)
-                        .on_press(HomeEventMessage::ToggleSidebar),
-                    Space::with_width(10),
-                    button("New")
-                        .style(AppBtn::Secondary)
-                        .padding(Padding::from([5, 15]))
-                        .on_press(HomeEventMessage::NewProject("Something new".to_string())),
-                ]
-                .padding(8.0)
-                .align_items(iced::Alignment::Center)
-            )
-            .width(Length::Fill)
-            .style(AppContainer::Flat),
+            tob_bar(
+                self.projects.into_options(),
+                self.projects.selected_project(),
+                self.sidebar_closed,
+            ),
             container("")
                 .width(Length::Fill)
                 .height(1)
                 .style(AppContainer::Hr),
-            row![
-                sidebar,
-                column![
-                    url_input_bar(
-                        &pending_request.url,
-                        self.is_requesting,
-                        &pending_request.method
-                    ),
-                    Space::with_height(10),
-                    match self.response {
-                        Some(_) => create_tabs!(
-                            self.request_tabs,
-                            HomeEventMessage::OnRequestTabChange,
-                            Some(HomeEventMessage::MinimizeRequestTabs),
-                            Some(
-                                container(
-                                    svg(Handle::from_memory(if self.request_tabs.is_active() {
-                                        EXPAND_SVG
-                                    } else {
-                                        COMPRESS_SVG
-                                    }))
-                                    .width(12)
-                                    .height(12)
-                                )
-                                .padding(5)
-                                .style(AppContainer::Outlined)
-                            )
-                        ),
-                        None => create_tabs!(
-                            self.request_tabs,
-                            HomeEventMessage::OnRequestTabChange,
-                            None,
-                            None
-                        ),
-                    },
-                    container("")
-                        .width(Length::Fill)
-                        .height(1)
-                        .style(AppContainer::Hr),
-                    Space::with_height(10),
-                    conditional_container,
-                ]
-                .padding(24.0)
-            ],
+            base_row
         ]
         .into()
     }
