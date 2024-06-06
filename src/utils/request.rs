@@ -116,6 +116,7 @@ impl Display for HttpMethod {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct PendingRequest {
     pub id: Uuid,
+    pub name: Option<String>,
     pub url: String,
     pub method: HttpMethod,
     pub headers: Vec<(String, String)>,
@@ -127,6 +128,7 @@ impl Default for PendingRequest {
     fn default() -> Self {
         Self {
             id: Uuid::now_v7(),
+            name: None,
             url: "https://".to_string(),
             method: Default::default(),
             headers: vec![("".to_string(), "".to_string())],

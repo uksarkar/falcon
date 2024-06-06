@@ -68,6 +68,7 @@ pub enum HomeEventMessage {
     OnRequestMethodChanged(HttpMethod),
     OnRequestItemKeyInput(PendingRequestItem, usize, String),
     OnRequestItemValueInput(PendingRequestItem, usize, String),
+    OnRequestNameInput(String),
     RemoveRequestItem(PendingRequestItem, usize),
     ToggleSidebar,
     AddNewRequest(PendingRequest),
@@ -225,6 +226,14 @@ impl Application for HomePage {
             HomeEventMessage::DeleteRequest(id) => {
                 if let Some(project) = self.projects.active_mut() {
                     project.remove_request("root".into(), id);
+                }
+                None
+            }
+            HomeEventMessage::OnRequestNameInput(name) => {
+                if let Some(project) = self.projects.active_mut() {
+                    if let Some(req) = project.current_request_mut() {
+                        req.name = Some(name);
+                    }
                 }
                 None
             }

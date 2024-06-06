@@ -1,10 +1,10 @@
 use iced::widget::svg::Handle;
-use iced::widget::{column, container, svg, Column, Space};
-use iced::{Element, Length};
+use iced::widget::{column, container, row, svg, text, text_input, Column, Space};
+use iced::{Element, Length, Padding};
 
 use crate::constants::{COMPRESS_SVG, EXPAND_SVG};
 use crate::create_tabs;
-use crate::ui::app_theme::AppContainer;
+use crate::ui::app_theme::{AppContainer, AppInput};
 
 use super::request_tabs_block::request_tab_container;
 use super::response_tabs_block::response_tab_container;
@@ -27,6 +27,22 @@ pub fn request_and_response_card(page: &HomePage) -> Element<'static, HomeEventM
     }
 
     column![
+        container(
+            row![
+                text("Request name: ").size(14),
+                text_input("Unknown request", &pending_request.name.unwrap_or_default())
+                    .style(AppInput)
+                    .width(Length::Fill)
+                    .on_input(HomeEventMessage::OnRequestNameInput),
+            ]
+            .align_items(iced::Alignment::Center)
+        )
+        .align_y(iced::alignment::Vertical::Center)
+        .padding(Padding::from([0, 10]))
+        .style(AppContainer::Rounded)
+        .height(40)
+        .width(Length::Fill),
+        Space::with_height(10),
         url_input_bar(
             &pending_request.url,
             page.is_requesting,

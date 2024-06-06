@@ -14,7 +14,11 @@ pub fn sidebar_requests(page: &HomePage) -> Element<'static, HomeEventMessage> {
         for (_, reqs) in project.requests {
             for req in reqs {
                 let card: Container<'static, HomeEventMessage> = HttpBadgeColumn {
-                    label: req.url.clone(),
+                    label: if req.name.clone().is_some_and(|n| n.trim().len() > 0) {
+                        req.name.unwrap_or_default().trim().to_string()
+                    } else {
+                        req.url.clone()
+                    },
                     on_click: HomeEventMessage::SelectRequest(req.id),
                     on_duplicate: HomeEventMessage::AddNewRequest(PendingRequest {
                         cookies: req.cookies.clone(),
