@@ -1,3 +1,4 @@
+use env_tabs_block::env_tabs_block;
 use iced::widget::{column, container, mouse_area, row, text, Row, Space};
 use iced::{Application, Command, Element, Length, Theme};
 use project_tabs_block::project_tabs_block;
@@ -28,6 +29,8 @@ mod sidebar_requests;
 mod tob_bar;
 mod url_input_bar;
 mod sidebar_item;
+mod env_tabs_block;
+mod key_and_value_input_row;
 
 #[derive(Default, Debug, Clone)]
 pub enum HomePageState {
@@ -98,6 +101,7 @@ pub enum HomeEventMessage {
     OnEnvItemKeyInput(usize, String),
     OnEnvItemValueInput(usize, String),
     OnEnvItemRemove(usize),
+    OnEnvNameInput(String),
 }
 
 impl HomePage {
@@ -318,6 +322,12 @@ impl Application for HomePage {
                 self.projects.set_active_env(id);
                 None
             }
+            HomeEventMessage::OnEnvNameInput(name) => {
+                if let Some(env) = self.projects.active_env_mut() {
+                    env.name = name;
+                }
+                None
+            }
             HomeEventMessage::NavigateTo(_) => None,
         }
         .unwrap_or(Command::none())
@@ -361,7 +371,9 @@ impl Application for HomePage {
             HomePageState::Projects => {
                 base_row = base_row.push(project_tabs_block(self));
             }
-            HomePageState::Envs => {}
+            HomePageState::Envs => {
+                base_row = base_row.push(env_tabs_block(self.projects.active_env()));
+            }
         }
 
         // build main view here
