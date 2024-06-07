@@ -102,7 +102,7 @@ impl Project {
 
     pub fn add_request(&mut self, folder: String, request: PendingRequest) {
         self.set_current_request(request.id);
-        
+
         if let Some(reqs) = self.requests.get_mut(&folder) {
             reqs.push(request);
         } else {
@@ -137,7 +137,7 @@ impl Default for Project {
             id: Uuid::now_v7(),
             requests,
             active_request_id: None,
-            base_url: None
+            base_url: None,
         }
     }
 }
@@ -240,6 +240,31 @@ impl Projects {
     pub fn selected_project(&self) -> Option<SelectOption<Uuid>> {
         if let Some(active) = self.active() {
             return Some(active.into());
+        }
+
+        None
+    }
+
+    pub fn delete_project(&mut self, id: Uuid) {
+        for (ind, proj) in self.items.iter().enumerate() {
+            if proj.id == id {
+                self.items.remove(ind);
+                return;
+            }
+        }
+    }
+
+    pub fn duplicate_project(&mut self, id: Uuid) -> Option<Project> {
+        for proj in self.items.iter() {
+            if proj.id == id {
+                let project = Project {
+                    id: Uuid::now_v7(),
+                    ..proj.clone()
+                };
+
+                self.items.push(project.clone());
+                return Some(project);
+            }
         }
 
         None

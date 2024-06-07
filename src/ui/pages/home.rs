@@ -89,6 +89,8 @@ pub enum HomeEventMessage {
     OnChangePageState(HomePageState),
     OnProjectNameInput(String),
     OnProjectBaseUrlInput(String),
+    OnProjectRemove(Uuid),
+    OnProjectDuplicate(Uuid),
 }
 
 impl HomePage {
@@ -134,7 +136,7 @@ impl Application for HomePage {
     }
 
     fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
-        let command: Option<Command<Self::Message>> = match message {
+        match message {
             HomeEventMessage::ToggleSidebar => {
                 self.sidebar_closed = !self.sidebar_closed;
                 None
@@ -269,14 +271,19 @@ impl Application for HomePage {
                 }
                 None
             }
+            HomeEventMessage::OnProjectDuplicate(id) => {
+                if let Some(project) = self.projects.duplicate_project(id) {
+                    self.projects.set_active(&project.id);
+                }
+                None
+            }
+            HomeEventMessage::OnProjectRemove(id) => {
+                self.projects.delete_project(id);
+                None
+            }
             _ => None,
-        };
-
-        if let Some(cmd) = command {
-            return cmd;
         }
-
-        Command::none()
+        .unwrap_or(Command::none())
     }
 
     fn view(&self) -> Element<Self::Message> {
