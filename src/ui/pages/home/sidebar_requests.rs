@@ -1,9 +1,11 @@
 use iced::widget::svg::Handle;
-use iced::widget::{button, container, row, svg, text, tooltip, Column, Container, Space};
+use iced::widget::{
+    button, container, pick_list, row, svg, text, tooltip, Column, Container, Space,
+};
 use iced::{Element, Length};
 
 use crate::constants::{ADD_DOC_SVG, COG_API_SVG};
-use crate::ui::app_theme::{AppBtn, AppColor, AppContainer};
+use crate::ui::app_theme::{AppBtn, AppColor, AppContainer, AppSelect};
 use crate::utils::request::PendingRequest;
 
 use super::http_badge_column::HttpBadgeColumn;
@@ -13,13 +15,22 @@ pub fn sidebar_requests(page: &HomePage) -> Element<'static, HomeEventMessage> {
     let mut requests = Column::new()
         .push(
             container(row![
-                text("Default env").size(14),
+                pick_list(
+                    page.projects.env_into_options(),
+                    page.projects.selected_env_as_option(),
+                    |env| HomeEventMessage::OnEnvSelect(env.value)
+                )
+                .padding(2)
+                .text_size(14)
+                .style(AppSelect::Card),
                 Space::with_width(Length::Fill),
                 tooltip(
                     button(svg(Handle::from_memory(COG_API_SVG)).width(15).height(15))
                         .style(AppBtn::Basic)
                         .padding(3)
-                        .on_press(HomeEventMessage::OnChangePageState(super::HomePageState::Envs)),
+                        .on_press(HomeEventMessage::OnChangePageState(
+                            super::HomePageState::Envs
+                        )),
                     container(text("Environments").size(10))
                         .style(AppContainer::Bg(AppColor::BG_DARKEST))
                         .padding(4),
