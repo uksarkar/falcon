@@ -1,5 +1,5 @@
 use super::{
-    app_theme::AppTheme,
+    // app_theme::AppTheme,
     pages::home::HomeEventMessage
 };
 
@@ -13,5 +13,5 @@ pub enum Route {
 pub enum MessageBus {
     NavigateTo(Route),
     HomeMessage(HomeEventMessage),
-    SetTheme(AppTheme),
+    // SetTheme(AppTheme),
 }

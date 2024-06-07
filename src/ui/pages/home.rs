@@ -13,8 +13,8 @@ use sidebar_requests::sidebar_requests;
 use tob_bar::tob_bar;
 use uuid::Uuid;
 
-use crate::ui::app_component::AppComponent;
-use crate::ui::app_theme::{AppContainer, AppTheme};
+// use crate::ui::app_component::AppComponent;
+use crate::ui::app_theme::AppContainer;
 use crate::ui::elements::tabs::TabNode;
 use crate::ui::elements::tabs::Tabs;
 use crate::ui::message_bus::Route;
@@ -47,7 +47,7 @@ pub enum HomePageState {
 }
 
 pub struct HomePage {
-    theme: Option<AppTheme>,
+    // theme: Option<AppTheme>,
     request_tabs: Tabs,
     response_tabs: Tabs,
     projects: Projects,
@@ -62,7 +62,7 @@ pub struct HomePage {
 impl Default for HomePage {
     fn default() -> Self {
         Self {
-            theme: Default::default(),
+            // theme: Default::default(),
             sidebar_closed: Default::default(),
             state: Default::default(),
             request_tabs: Tabs::new(
@@ -166,19 +166,19 @@ impl HomePage {
     }
 }
 
-impl AppComponent for HomePage {
-    fn app_theme(&self) -> crate::ui::app_theme::AppTheme {
-        if let Some(theme) = self.theme.clone() {
-            return theme;
-        }
+// impl AppComponent for HomePage {
+    // fn app_theme(&self) -> crate::ui::app_theme::AppTheme {
+    //     if let Some(theme) = self.theme.clone() {
+    //         return theme;
+    //     }
 
-        AppTheme::Light
-    }
+    //     AppTheme::Light
+    // }
 
-    fn set_theme(&mut self, theme: AppTheme) {
-        self.theme = Some(theme);
-    }
-}
+    // fn set_theme(&mut self, theme: AppTheme) {
+    //     self.theme = Some(theme);
+    // }
+// }
 
 impl Application for HomePage {
     type Message = HomeEventMessage;

@@ -77,7 +77,7 @@ impl Into<iced::Background> for AppColor {
 pub enum AppTheme {
     #[default]
     Light,
-    Dark,
+    // Dark,
 }
 
 impl AppTheme {
@@ -93,7 +93,7 @@ impl AppTheme {
                 success: Color::from_rgba8(24, 172, 0, 1.0),
                 danger: Color::from_rgba8(172, 0, 0, 1.0),
             },
-            AppTheme::Dark => todo!(),
+            // AppTheme::Dark => todo!(),
         }
     }
 }

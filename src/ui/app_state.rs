@@ -1,7 +1,7 @@
 use iced::{Application, Command, Element, Theme};
 
 use super::{
-    app_component::AppComponent,
+    // app_component::AppComponent,
     app_theme::AppTheme,
     message_bus::{MessageBus, Route},
     pages::{
@@ -40,11 +40,11 @@ impl AppState {
                 },
                 _ => self.home_state.update(msg).map(MessageBus::HomeMessage),
             },
-            MessageBus::SetTheme(theme) => {
-                self.theme = theme.clone();
-                self.home_state.set_theme(theme);
-                Command::none()
-            }
+            // MessageBus::SetTheme(theme) => {
+            //     self.theme = theme.clone();
+            //     self.home_state.set_theme(theme);
+            //     Command::none()
+            // }
         }
     }
 
