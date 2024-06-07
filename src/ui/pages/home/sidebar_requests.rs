@@ -22,8 +22,8 @@ pub fn sidebar_requests(page: &HomePage) -> Element<'static, HomeEventMessage> {
                 )
                 .padding(2)
                 .text_size(14)
+                .width(Length::Fill)
                 .style(AppSelect::Card),
-                Space::with_width(Length::Fill),
                 tooltip(
                     button(svg(Handle::from_memory(COG_API_SVG)).width(15).height(15))
                         .style(AppBtn::Basic)
