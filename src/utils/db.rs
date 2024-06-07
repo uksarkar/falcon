@@ -13,6 +13,67 @@ use super::app::app_config;
 use super::request::{HttpMethod, PendingRequest, PendingRequestItem};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Env {
+    pub id: Uuid,
+    pub name: String,
+    pub items: Vec<(String, String)>,
+    pub is_active: bool,
+}
+
+impl Default for Env {
+    fn default() -> Self {
+        Self {
+            id: Uuid::now_v7(),
+            name: "Default env".into(),
+            items: vec![("".into(), "".into())],
+            is_active: Default::default(),
+        }
+    }
+}
+
+impl Into<SelectOption<Uuid>> for Env {
+    fn into(self) -> SelectOption<Uuid> {
+        SelectOption {
+            label: self.name,
+            value: self.id,
+        }
+    }
+}
+
+impl Display for Env {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.name)
+    }
+}
+
+impl Env {
+    pub fn update_item_key(&mut self, index: usize, key: String) {
+        if let Some((_, value)) = self.items.get(index) {
+            self.items[index] = (key, value.clone());
+
+            if index + 1 == self.items.len() {
+                self.add_item("", "");
+            }
+        }
+    }
+    pub fn update_item_value(&mut self, index: usize, value: String) {
+        if let Some((key, _)) = self.items.get(index) {
+            self.items[index] = (key.clone(), value);
+
+            if index + 1 == self.items.len() {
+                self.add_item("", "");
+            }
+        }
+    }
+    pub fn remove_item(&mut self, index: usize) {
+        self.items.remove(index);
+    }
+    pub fn add_item(&mut self, key: impl Into<String>, value: impl Into<String>) {
+        self.items.push((key.into(), value.into()));
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Project {
     pub name: String,
     pub base_url: Option<String>,
@@ -20,6 +81,7 @@ pub struct Project {
     pub id: Uuid,
     pub requests: HashMap<String, Vec<PendingRequest>>,
     pub active_request_id: Option<Uuid>,
+    pub default_env: Option<Uuid>,
 }
 
 impl Project {
@@ -124,6 +186,14 @@ impl Project {
             self.set_current_request(id);
         }
     }
+
+    pub fn set_default_env(&mut self, id: Uuid) {
+        self.default_env = Some(id);
+    }
+
+    pub fn remove_default_env(&mut self) {
+        self.default_env = None
+    }
 }
 
 impl Default for Project {
@@ -138,6 +208,7 @@ impl Default for Project {
             requests,
             active_request_id: None,
             base_url: None,
+            default_env: None,
         }
     }
 }
@@ -161,6 +232,7 @@ impl Display for Project {
 pub struct Projects {
     #[serde(rename = "projects")]
     items: Vec<Project>,
+    envs: Vec<Env>,
 }
 
 impl Into<SelectItems<Uuid>> for &Projects {
@@ -178,6 +250,7 @@ impl Projects {
     pub fn new() -> Self {
         get_projects(&format!("{}/falcon_projects.toml", app_config().DATA_DIR)).unwrap_or(Self {
             items: vec![Project::default()],
+            envs: vec![Env::default()],
         })
     }
 
@@ -205,6 +278,98 @@ impl Projects {
         }
 
         Some(&mut self.items[0])
+    }
+
+    pub fn get_project_default_env_id(&self) -> Option<Uuid> {
+        self.active().and_then(|proj| {
+            proj.default_env.and_then(|env_id| {
+                self.envs
+                    .iter()
+                    .find(|env| env.id == env_id)
+                    .and_then(|env| Some(env.id.clone()))
+            })
+        })
+    }
+
+    pub fn project_default_env(&self) -> Option<Env> {
+        self.active().and_then(|p| {
+            p.default_env.and_then(|env_id| {
+                self.envs
+                    .iter()
+                    .find(|env| env.id == env_id)
+                    .and_then(|env| Some(env.clone()))
+            })
+        })
+    }
+
+    pub fn active_env(&self) -> Option<Env> {
+        // Step 1: Check for an existing active env
+        if let Some(env) = self.envs.iter().find(|itm| itm.is_active) {
+            return Some(env.clone());
+        }
+
+        // Step 2: If no active env, check if the list is not empty and make the first env active
+        if !self.envs.is_empty() {
+            return Some(self.envs[0].clone());
+        }
+
+        None
+    }
+
+    pub fn active_env_mut(&mut self) -> Option<&mut Env> {
+        if self.envs.is_empty() {
+            return None;
+        }
+
+        if let Some(index) = self.envs.iter().position(|i| i.is_active) {
+            return Some(&mut self.envs[index]);
+        }
+
+        Some(&mut self.envs[0])
+    }
+
+    pub fn set_active_env(&mut self, id: Uuid) {
+        for env in self.envs.iter_mut() {
+            env.is_active = env.id == id;
+        }
+    }
+
+    pub fn delete_env(&mut self, id: Uuid) {
+        for (i, env) in self.envs.iter().enumerate() {
+            if env.id == id {
+                self.envs.remove(i);
+                return;
+            }
+        }
+    }
+
+    pub fn duplicate_env(&mut self, id: Uuid) -> Option<Env> {
+        for env in self.envs.iter() {
+            if env.id == id {
+                let env = Env {
+                    id: Uuid::now_v7(),
+                    ..env.clone()
+                };
+
+                self.envs.push(env.clone());
+                return Some(env);
+            }
+        }
+
+        None
+    }
+
+    pub fn is_active_env(&self, id: Uuid) -> bool {
+        if let Some(env) = self.envs.iter().find(|itm| itm.is_active) {
+            return env.id == id;
+        }
+
+        // Step 2: If no active project, check if the list is not empty and make the first project active
+        if !self.items.is_empty() {
+            return self.items[0].id == id;
+        }
+
+        false
     }
 
     pub fn sync(&self) -> Result<(), String> {
@@ -268,6 +433,19 @@ impl Projects {
         }
 
         None
+    }
+
+    pub fn env_into_options(&self) -> SelectItems<Uuid> {
+        SelectItems(
+            <Vec<Env> as Clone>::clone(&self.envs)
+                .into_iter()
+                .map(|env| env.into())
+                .collect(),
+        )
+    }
+
+    pub fn selected_env_as_option(&self) -> Option<SelectOption<Uuid>> {
+        self.active_env().and_then(|env| Some(env.into()))
     }
 }
 

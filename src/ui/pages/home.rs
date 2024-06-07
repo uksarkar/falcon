@@ -27,6 +27,7 @@ mod sidebar_projects;
 mod sidebar_requests;
 mod tob_bar;
 mod url_input_bar;
+mod sidebar_item;
 
 #[derive(Default, Debug, Clone)]
 pub enum HomePageState {
@@ -91,6 +92,12 @@ pub enum HomeEventMessage {
     OnProjectBaseUrlInput(String),
     OnProjectRemove(Uuid),
     OnProjectDuplicate(Uuid),
+    OnEnvSelect(Uuid),
+    OnEnvDuplicate(Uuid),
+    OnEnvDelete(Uuid),
+    OnEnvItemKeyInput(usize, String),
+    OnEnvItemValueInput(usize, String),
+    OnEnvItemRemove(usize),
 }
 
 impl HomePage {
@@ -281,7 +288,37 @@ impl Application for HomePage {
                 self.projects.delete_project(id);
                 None
             }
-            _ => None,
+            HomeEventMessage::OnEnvDelete(id) => {
+                self.projects.delete_env(id);
+                None
+            }
+            HomeEventMessage::OnEnvDuplicate(id) => {
+                self.projects.duplicate_env(id);
+                None
+            }
+            HomeEventMessage::OnEnvItemKeyInput(index, key) => {
+                if let Some(env) = self.projects.active_env_mut() {
+                    env.update_item_key(index, key);
+                }
+                None
+            }
+            HomeEventMessage::OnEnvItemRemove(index) => {
+                if let Some(env) = self.projects.active_env_mut() {
+                    env.remove_item(index);
+                }
+                None
+            }
+            HomeEventMessage::OnEnvItemValueInput(index, value) => {
+                if let Some(env) = self.projects.active_env_mut() {
+                    env.update_item_value(index, value);
+                }
+                None
+            }
+            HomeEventMessage::OnEnvSelect(id) => {
+                self.projects.set_active_env(id);
+                None
+            }
+            HomeEventMessage::NavigateTo(_) => None,
         }
         .unwrap_or(Command::none())
     }

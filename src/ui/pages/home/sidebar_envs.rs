@@ -10,10 +10,10 @@ use crate::{
     ui::app_theme::{AppColor, AppContainer},
 };
 
-use super::{HomeEventMessage, HomePage};
+use super::{sidebar_item::sidebar_item, HomeEventMessage, HomePage};
 
-pub fn get_env_items(_page: &HomePage) -> Element<'static, HomeEventMessage, Theme, Renderer> {
-    Column::new()
+pub fn get_env_items(page: &HomePage) -> Element<'static, HomeEventMessage, Theme, Renderer> {
+    let mut items = Column::new()
         .push(
             mouse_area(
                 container(
@@ -41,6 +41,24 @@ pub fn get_env_items(_page: &HomePage) -> Element<'static, HomeEventMessage, The
                 .style(AppContainer::Bg(AppColor::BG_DARKER))
                 .height(1)
                 .width(Length::Fill),
-        )
-        .into()
+        );
+
+    for env in page.projects.env_into_options().iter() {
+        items = items
+            .push(sidebar_item(
+                env.label.clone().as_str(),
+                page.projects.is_active_env(env.value),
+                HomeEventMessage::OnEnvSelect(env.value),
+                HomeEventMessage::OnEnvDelete(env.value),
+                HomeEventMessage::OnEnvDuplicate(env.value),
+            ))
+            .push(
+                container("")
+                    .style(AppContainer::Bg(AppColor::BG_DARKER))
+                    .height(1)
+                    .width(Length::Fill),
+            );
+    }
+
+    items.into()
 }
