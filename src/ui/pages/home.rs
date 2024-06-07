@@ -112,7 +112,6 @@ pub enum HomeEventMessage {
     OnAuthorizationTabChange(TabNode),
     OnAuthorizationInput(FalconAuthorization),
     OnBodyTabChange(TabNode),
-    OnBodyInput(FlBody),
     OnRequestBodyContextAction(Action),
 }
 
@@ -360,14 +359,6 @@ impl Application for HomePage {
                 if let Some(project) = self.projects.active_mut() {
                     if let Some(req) = project.current_request_mut() {
                         req.set_auth(auth);
-                    }
-                }
-                None
-            }
-            HomeEventMessage::OnBodyInput(body) => {
-                if let Some(project) = self.projects.active_mut() {
-                    if let Some(req) = project.current_request_mut() {
-                        req.set_body(body);
                     }
                 }
                 None
