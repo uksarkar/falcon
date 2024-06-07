@@ -1,6 +1,6 @@
 use reqwest::cookie::Jar;
-use reqwest::header::HeaderMap;
-use reqwest::{Client, Method, StatusCode};
+use reqwest::header::{self, HeaderMap, HeaderName, HeaderValue};
+use reqwest::{Body, Client, Method, StatusCode};
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use std::sync::Arc;
@@ -144,6 +144,22 @@ impl Default for FlBody {
     }
 }
 
+impl Display for FlBody {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FlBody::ApplicationJson(json) => write!(f, "{}", json),
+        }
+    }
+}
+
+impl Into<Body> for FlBody {
+    fn into(self) -> Body {
+        match self {
+            FlBody::ApplicationJson(json) => Body::from(json),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct PendingRequest {
     pub id: Uuid,
@@ -179,15 +195,53 @@ impl PendingRequest {
         let cookie_jar = Arc::new(Jar::default());
 
         // Add a cookie manually (if needed)
-        let url = url::Url::parse(&self.url)?;
+        let mut url = url::Url::parse(&self.url)?;
+
+        for (name, value) in self.queries.iter() {
+            if !name.trim().is_empty() {
+                url.set_query(Some(&format!("{}={}", name, value)));
+            }
+        }
 
         for (name, value) in self.cookies.iter() {
             cookie_jar.add_cookie_str(&format!("{}={}", name, value), &url);
         }
 
+        let mut headers = HeaderMap::new();
+
+        for (key, value) in self.headers.iter() {
+            if !key.trim().is_empty() {
+                headers.insert(
+                    HeaderName::from_bytes(key.as_bytes())?,
+                    HeaderValue::from_str(&value)?,
+                );
+            }
+        }
+
+        match self.body {
+            FlBody::ApplicationJson(_) => {
+                headers.insert(
+                    header::CONTENT_TYPE,
+                    HeaderValue::from_str("application/json")?,
+                );
+            }
+        }
+
+        match self.authorization.clone() {
+            FalconAuthorization::Bearer { prefix, token } => {
+                if !token.trim().is_empty() {
+                    headers.insert(
+                        header::AUTHORIZATION,
+                        HeaderValue::from_str(&format!("{} {}", prefix, token))?,
+                    );
+                }
+            }
+        }
+
         // Create a reqwest client with the cookie jar
         let client = Client::builder()
-            .cookie_provider(cookie_jar.clone())
+            .default_headers(headers)
+            .cookie_provider(cookie_jar)
             .build()?;
 
         // Start timing the request
@@ -196,6 +250,7 @@ impl PendingRequest {
         // Send a request
         let res = client
             .request(self.method.clone().into(), url)
+            .body(self.body.clone())
             .send()
             .await?;
 
