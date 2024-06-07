@@ -1,3 +1,6 @@
+use std::thread::sleep;
+use std::time::{Duration, Instant};
+
 use env_tabs_block::env_tabs_block;
 use iced::widget::text_editor::Action;
 use iced::widget::{column, container, mouse_area, row, text, text_editor, Row, Space};
@@ -53,6 +56,7 @@ pub struct HomePage {
     sidebar_closed: bool,
     state: HomePageState,
     request_body_context: text_editor::Content,
+    scheduled_sync_at: Instant,
 }
 
 impl Default for HomePage {
@@ -70,6 +74,7 @@ impl Default for HomePage {
             is_requesting: false,
             response: None,
             request_body_context: text_editor::Content::new(),
+            scheduled_sync_at: Instant::now(),
         }
     }
 }
@@ -113,6 +118,8 @@ pub enum HomeEventMessage {
     OnAuthorizationInput(FalconAuthorization),
     OnBodyTabChange(TabNode),
     OnRequestBodyContextAction(Action),
+    SyncProjects,
+    SyncedDone,
 }
 
 impl HomePage {
@@ -126,6 +133,36 @@ impl HomePage {
         } else {
             ("root".to_string(), PendingRequest::default())
         }
+    }
+
+    fn schedule_sync(&mut self) -> Command<HomeEventMessage> {
+        self.scheduled_sync_at = Instant::now();
+        Command::perform(
+            async {
+                sleep( Duration::from_millis(500));
+                HomeEventMessage::SyncProjects
+            },
+            |msg| msg,
+        )
+    }
+
+    fn perform_sync(&self) -> Command<HomeEventMessage> {
+        if Instant::now().duration_since(self.scheduled_sync_at) > Duration::from_millis(500) {
+            let projects = self.projects.clone();
+
+            return Command::perform(
+                async move {
+                    match projects.sync() {
+                        Ok(_) => {}
+                        Err(err) => println!("Failed to sync, {:?}", err),
+                    }
+                    HomeEventMessage::SyncedDone
+                },
+                |msg| msg,
+            );
+        }
+
+        Command::none()
     }
 }
 
@@ -169,7 +206,7 @@ impl Application for HomePage {
                 }
                 self.response = None;
                 self.request_tabs.activate();
-                None
+                Some(self.schedule_sync())
             }
             HomeEventMessage::OnRequestTabChange(node) => {
                 self.request_tabs.set_active(&node.label);
@@ -185,20 +222,17 @@ impl Application for HomePage {
                 None
             }
             HomeEventMessage::NewProject(name) => {
-                match self.projects.add(Project {
+                self.projects.add(Project {
                     name,
                     is_active: true,
                     ..Default::default()
-                }) {
-                    Ok(()) => (),
-                    Err(e) => println!("{:<8}{}", "DB: ", e),
-                };
+                });
                 self.state = HomePageState::Projects;
-                None
+                Some(self.schedule_sync())
             }
             HomeEventMessage::OnProjectChange(id) => {
                 self.projects.set_active(&id);
-                None
+                Some(self.schedule_sync())
             }
             HomeEventMessage::SendRequest => {
                 if let Some(project) = self.projects.active() {
@@ -229,13 +263,13 @@ impl Application for HomePage {
                 if let Some(project) = self.projects.active_mut() {
                     project.update_request_item(item, index, name, true);
                 }
-                None
+                Some(self.schedule_sync())
             }
             HomeEventMessage::OnRequestItemValueInput(item, index, val) => {
                 if let Some(project) = self.projects.active_mut() {
                     project.update_request_item(item, index, val, false);
                 }
-                None
+                Some(self.schedule_sync())
             }
             HomeEventMessage::RemoveRequestItem(item, index) => {
                 if let Some(project) = self.projects.active_mut() {
@@ -243,31 +277,31 @@ impl Application for HomePage {
                         req.remove_item(item, index);
                     }
                 }
-                None
+                Some(self.schedule_sync())
             }
             HomeEventMessage::OnRequestMethodChanged(method) => {
                 if let Some(project) = self.projects.active_mut() {
                     project.update_request_method(method);
                 }
-                None
+                Some(self.schedule_sync())
             }
             HomeEventMessage::AddNewRequest(req) => {
                 if let Some(project) = self.projects.active_mut() {
                     project.add_request("root".into(), req);
                 }
-                None
+                Some(self.schedule_sync())
             }
             HomeEventMessage::SelectRequest(id) => {
                 if let Some(project) = self.projects.active_mut() {
                     project.set_current_request(id)
                 }
-                None
+                Some(self.schedule_sync())
             }
             HomeEventMessage::DeleteRequest(id) => {
                 if let Some(project) = self.projects.active_mut() {
                     project.remove_request("root".into(), id);
                 }
-                None
+                Some(self.schedule_sync())
             }
             HomeEventMessage::OnRequestNameInput(name) => {
                 if let Some(project) = self.projects.active_mut() {
@@ -275,7 +309,7 @@ impl Application for HomePage {
                         req.name = Some(name);
                     }
                 }
-                None
+                Some(self.schedule_sync())
             }
             HomeEventMessage::OnChangePageState(state) => {
                 self.state = state;
@@ -285,59 +319,59 @@ impl Application for HomePage {
                 if let Some(project) = self.projects.active_mut() {
                     project.name = name;
                 }
-                None
+                Some(self.schedule_sync())
             }
             HomeEventMessage::OnProjectBaseUrlInput(url) => {
                 if let Some(project) = self.projects.active_mut() {
                     project.base_url = Some(url);
                 }
-                None
+                Some(self.schedule_sync())
             }
             HomeEventMessage::OnProjectDuplicate(id) => {
                 if let Some(project) = self.projects.duplicate_project(id) {
                     self.projects.set_active(&project.id);
                 }
-                None
+                Some(self.schedule_sync())
             }
             HomeEventMessage::OnProjectRemove(id) => {
                 self.projects.delete_project(id);
-                None
+                Some(self.schedule_sync())
             }
             HomeEventMessage::OnEnvDelete(id) => {
                 self.projects.delete_env(id);
-                None
+                Some(self.schedule_sync())
             }
             HomeEventMessage::OnEnvDuplicate(id) => {
                 self.projects.duplicate_env(id);
-                None
+                Some(self.schedule_sync())
             }
             HomeEventMessage::OnEnvItemKeyInput(index, key) => {
                 if let Some(env) = self.projects.active_env_mut() {
                     env.update_item_key(index, key);
                 }
-                None
+                Some(self.schedule_sync())
             }
             HomeEventMessage::OnEnvItemRemove(index) => {
                 if let Some(env) = self.projects.active_env_mut() {
                     env.remove_item(index);
                 }
-                None
+                Some(self.schedule_sync())
             }
             HomeEventMessage::OnEnvItemValueInput(index, value) => {
                 if let Some(env) = self.projects.active_env_mut() {
                     env.update_item_value(index, value);
                 }
-                None
+                Some(self.schedule_sync())
             }
             HomeEventMessage::OnEnvSelect(id) => {
                 self.projects.set_active_env(id);
-                None
+                Some(self.schedule_sync())
             }
             HomeEventMessage::OnEnvNameInput(name) => {
                 if let Some(env) = self.projects.active_env_mut() {
                     env.name = name;
                 }
-                None
+                Some(self.schedule_sync())
             }
             HomeEventMessage::OnProjectDefaultEnvSelect(id) => {
                 if let Some(env_id) = id.clone() {
@@ -346,14 +380,14 @@ impl Application for HomePage {
                 if let Some(project) = self.projects.active_mut() {
                     project.default_env = id;
                 }
-                None
+                Some(self.schedule_sync())
             }
             HomeEventMessage::OnEnvAdd => {
                 let env = Env::default();
 
                 self.projects.add_env(env.clone());
                 self.projects.set_active_env(env.id);
-                None
+                Some(self.schedule_sync())
             }
             HomeEventMessage::OnAuthorizationInput(auth) => {
                 if let Some(project) = self.projects.active_mut() {
@@ -361,7 +395,7 @@ impl Application for HomePage {
                         req.set_auth(auth);
                     }
                 }
-                None
+                Some(self.schedule_sync())
             }
             HomeEventMessage::OnRequestBodyContextAction(action) => {
                 self.request_body_context.perform(action);
@@ -372,6 +406,11 @@ impl Application for HomePage {
                     }
                 }
 
+                Some(self.schedule_sync())
+            }
+            HomeEventMessage::SyncProjects => Some(self.perform_sync()),
+            HomeEventMessage::SyncedDone => {
+                println!("{:<10}Synced to local file", "DB:");
                 None
             }
             HomeEventMessage::OnAuthorizationTabChange(_) => None,

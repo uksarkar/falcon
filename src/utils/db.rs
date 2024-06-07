@@ -228,7 +228,7 @@ impl Display for Project {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Projects {
     #[serde(rename = "projects")]
     items: Vec<Project>,
@@ -398,7 +398,7 @@ impl Projects {
         }
     }
 
-    pub fn add(&mut self, project: Project) -> Result<(), String> {
+    pub fn add(&mut self, project: Project) {
         if project.is_active {
             for proj in &mut self.items {
                 proj.is_active = false;
@@ -406,8 +406,6 @@ impl Projects {
         }
 
         self.items.push(project);
-
-        self.sync()
     }
 
     pub fn into_options(&self) -> SelectItems<Uuid> {
