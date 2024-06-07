@@ -16,7 +16,7 @@ use crate::ui::elements::tabs::Tabs;
 use crate::ui::message_bus::Route;
 use crate::utils::db::{Env, Project, Projects};
 use crate::utils::helpers::page_title;
-use crate::utils::request::{FalconResponse, HttpMethod, PendingRequest, PendingRequestItem};
+use crate::utils::request::{FalconAuthorization, FalconResponse, HttpMethod, PendingRequest, PendingRequestItem};
 
 mod env_tabs_block;
 mod http_badge_column;
@@ -104,6 +104,8 @@ pub enum HomeEventMessage {
     OnEnvNameInput(String),
     OnEnvAdd,
     OnProjectDefaultEnvSelect(Option<Uuid>),
+    OnAuthorizationTabChange(TabNode),
+    OnAuthorizationInput(FalconAuthorization),
 }
 
 impl HomePage {
@@ -346,6 +348,15 @@ impl Application for HomePage {
                 self.projects.set_active_env(env.id);
                 None
             }
+            HomeEventMessage::OnAuthorizationInput(auth) => {
+                if let Some(project) = self.projects.active_mut() {
+                    if let Some(req) = project.current_request_mut() {
+                        req.set_auth(auth);
+                    }
+                }
+                None
+            }
+            HomeEventMessage::OnAuthorizationTabChange(_) => None,
             HomeEventMessage::NavigateTo(_) => None,
         }
         .unwrap_or(Command::none())

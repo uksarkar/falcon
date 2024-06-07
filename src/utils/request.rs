@@ -2,10 +2,10 @@ use reqwest::cookie::Jar;
 use reqwest::header::HeaderMap;
 use reqwest::{Client, Method, StatusCode};
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 use std::fmt::Display;
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime};
+use uuid::Uuid;
 
 use crate::ui::elements::select_options::SelectOption;
 use crate::utils::helpers::format_duration;
@@ -53,11 +53,11 @@ pub struct FalconResponse {
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct HttpMethod(pub Method);
 
-impl Into<SelectOption<HttpMethod>> for HttpMethod{
+impl Into<SelectOption<HttpMethod>> for HttpMethod {
     fn into(self) -> SelectOption<HttpMethod> {
         SelectOption {
             label: format!("{}", self),
-            value: self
+            value: self,
         }
     }
 }
@@ -96,7 +96,13 @@ impl From<Method> for HttpMethod {
 
 impl From<&str> for HttpMethod {
     fn from(value: &str) -> Self {
-        Self(value.to_uppercase().as_bytes().try_into().unwrap_or_default())
+        Self(
+            value
+                .to_uppercase()
+                .as_bytes()
+                .try_into()
+                .unwrap_or_default(),
+        )
     }
 }
 
@@ -106,10 +112,24 @@ impl Display for HttpMethod {
 
         let val = match val.next() {
             None => "Get".to_string(),
-            Some(char) => char.to_uppercase().to_string() + val.as_str().to_lowercase().as_str()
+            Some(char) => char.to_uppercase().to_string() + val.as_str().to_lowercase().as_str(),
         };
 
         write!(f, "{}", val)
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub enum FalconAuthorization {
+    Bearer { prefix: String, token: String },
+}
+
+impl Default for FalconAuthorization {
+    fn default() -> Self {
+        FalconAuthorization::Bearer {
+            prefix: "Bearer".to_string(),
+            token: "".to_string(),
+        }
     }
 }
 
@@ -122,6 +142,7 @@ pub struct PendingRequest {
     pub headers: Vec<(String, String)>,
     pub cookies: Vec<(String, String)>,
     pub queries: Vec<(String, String)>,
+    pub authorization: FalconAuthorization,
 }
 
 impl Default for PendingRequest {
@@ -134,6 +155,7 @@ impl Default for PendingRequest {
             headers: vec![("".to_string(), "".to_string())],
             cookies: vec![("".to_string(), "".to_string())],
             queries: vec![("".to_string(), "".to_string())],
+            authorization: FalconAuthorization::default(),
         }
     }
 }
@@ -159,7 +181,10 @@ impl PendingRequest {
         let start = Instant::now();
 
         // Send a request
-        let res = client.request(self.method.clone().into(), url).send().await?;
+        let res = client
+            .request(self.method.clone().into(), url)
+            .send()
+            .await?;
 
         // Calculate the duration
         let duration = start.elapsed();
@@ -305,5 +330,9 @@ impl PendingRequest {
 
     pub fn set_method(&mut self, method: HttpMethod) {
         self.method = method;
+    }
+
+    pub fn set_auth(&mut self, auth: FalconAuthorization) {
+        self.authorization = auth;
     }
 }

@@ -1,6 +1,16 @@
-use iced::{widget::Column, Renderer, Theme};
+use iced::{
+    widget::{column, container, row, text, text_input, Column, Space},
+    Element, Length, Padding, Renderer, Theme,
+};
 
-use crate::utils::request::{PendingRequest, PendingRequestItem};
+use crate::{
+    create_tabs,
+    ui::{
+        app_theme::{AppColor, AppContainer, AppInput},
+        elements::tabs::Tabs,
+    },
+    utils::request::{FalconAuthorization, PendingRequest, PendingRequestItem},
+};
 
 use super::{key_and_value_input_row::key_and_value_input_row, HomeEventMessage};
 
@@ -20,7 +30,9 @@ pub fn request_tab_container(
                 build_key_value_input_columns(&pending_request.headers, PendingRequestItem::Header);
         }
         "Body" => {}
-        "Authorization" => {}
+        "Authorization" => {
+            container_columns = container_columns.push(authorization_block(pending_request));
+        }
         "Cookies" => {
             container_columns =
                 build_key_value_input_columns(&pending_request.cookies, PendingRequestItem::Cookie);
@@ -53,4 +65,60 @@ fn build_key_value_input_columns(
     }
 
     container_columns
+}
+
+fn authorization_block<'a>(req: &PendingRequest) -> Element<'a, HomeEventMessage, Theme, Renderer> {
+    column![
+        create_tabs!(
+            Tabs::new(vec!["Bearer"], "Bearer"),
+            HomeEventMessage::OnAuthorizationTabChange,
+            None,
+            None
+        ),
+        Space::with_height(10),
+        container(match req.authorization.clone() {
+            FalconAuthorization::Bearer { prefix, token } => {
+                let token_a = token.clone();
+                let prefix_a = prefix.clone();
+
+                column![
+                    row![
+                        text("Prefix"),
+                        Space::with_width(5),
+                        text_input("Bearer", &prefix)
+                            .style(AppInput)
+                            .on_input(move |p| {
+                                HomeEventMessage::OnAuthorizationInput(
+                                    FalconAuthorization::Bearer {
+                                        prefix: p,
+                                        token: token_a.clone(),
+                                    },
+                                )
+                            })
+                    ]
+                    .align_items(iced::Alignment::Center),
+                    container(
+                        container("")
+                            .style(AppContainer::Bg(AppColor::BG_DARKER))
+                            .height(1)
+                            .width(Length::Fill),
+                    )
+                    .padding(Padding::from([10, 0])),
+                    container(text("Token")).padding(Padding::from([10, 0])),
+                    text_input("Token", &token)
+                        .width(Length::Fill)
+                        .style(AppInput)
+                        .on_input(move |t| {
+                            HomeEventMessage::OnAuthorizationInput(FalconAuthorization::Bearer {
+                                prefix: prefix_a.clone(),
+                                token: t,
+                            })
+                        }),
+                ]
+            }
+        })
+        .style(AppContainer::Rounded)
+        .padding(10),
+    ]
+    .into()
 }
