@@ -1,6 +1,6 @@
 use iced::widget::svg::Handle;
 use iced::widget::{
-    button, container, pick_list, row, svg, text, tooltip, Column, Container, Space,
+    button, container, pick_list, row, svg, text, tooltip, Column, Container,
 };
 use iced::{Element, Length};
 

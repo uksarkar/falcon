@@ -18,19 +18,19 @@ use crate::utils::db::{Project, Projects};
 use crate::utils::helpers::page_title;
 use crate::utils::request::{FalconResponse, HttpMethod, PendingRequest, PendingRequestItem};
 
+mod env_tabs_block;
 mod http_badge_column;
+mod key_and_value_input_row;
 mod project_tabs_block;
 mod request_and_response_card;
 mod request_tabs_block;
 mod response_tabs_block;
 mod sidebar_envs;
+mod sidebar_item;
 mod sidebar_projects;
 mod sidebar_requests;
 mod tob_bar;
 mod url_input_bar;
-mod sidebar_item;
-mod env_tabs_block;
-mod key_and_value_input_row;
 
 #[derive(Default, Debug, Clone)]
 pub enum HomePageState {
@@ -102,6 +102,7 @@ pub enum HomeEventMessage {
     OnEnvItemValueInput(usize, String),
     OnEnvItemRemove(usize),
     OnEnvNameInput(String),
+    OnProjectDefaultEnvSelect(Option<Uuid>),
 }
 
 impl HomePage {
@@ -325,6 +326,15 @@ impl Application for HomePage {
             HomeEventMessage::OnEnvNameInput(name) => {
                 if let Some(env) = self.projects.active_env_mut() {
                     env.name = name;
+                }
+                None
+            }
+            HomeEventMessage::OnProjectDefaultEnvSelect(id) => {
+                if let Some(env_id) = id.clone() {
+                    self.projects.set_active_env(env_id);
+                }
+                if let Some(project) = self.projects.active_mut() {
+                    project.default_env = id;
                 }
                 None
             }

@@ -280,6 +280,14 @@ impl Projects {
         Some(&mut self.items[0])
     }
 
+    pub fn set_project_default_env(&mut self, project_id: Uuid, env_id: Option<Uuid>) {
+        for project in self.items.iter_mut() {
+            if project.id == project_id {
+                project.default_env = env_id;
+            }
+        }
+    }
+
     pub fn get_project_default_env_id(&self) -> Option<Uuid> {
         self.active().and_then(|proj| {
             proj.default_env.and_then(|env_id| {
