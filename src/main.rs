@@ -1,5 +1,3 @@
-use std::env;
-
 use iced::{window, Application, Settings, Size};
 
 mod models;
@@ -8,12 +6,10 @@ mod utils;
 mod constants;
 
 use ui::app_state::AppState;
-use utils::app::app_config;
 
 #[tokio::main]
 pub async fn main() -> iced::Result {
-    println!("{:#?}", app_config());
-    println!("{}", env::current_dir().unwrap().to_str().unwrap());
+    println!("{:<10} An HTTP request client.", "Falcon:");
 
     AppState::run(Settings {
         window: window::Settings {
