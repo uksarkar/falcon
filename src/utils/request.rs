@@ -1,4 +1,3 @@
-use iced::widget::text_editor;
 use reqwest::cookie::Jar;
 use reqwest::header::HeaderMap;
 use reqwest::{Client, Method, StatusCode};
