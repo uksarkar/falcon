@@ -1,13 +1,13 @@
 use iced::{
-    widget::{container, mouse_area, row, svg, text, Column, Space},
+    widget::{button, container, mouse_area, row, svg, text, Column, Space},
     Element, Length, Padding, Renderer, Theme,
 };
 
 use iced::widget::svg::Handle;
 
 use crate::{
-    constants::ANGLE_LEFT_SVG,
-    ui::app_theme::{AppColor, AppContainer},
+    constants::{ADD_DOC_SVG, ANGLE_LEFT_SVG},
+    ui::app_theme::{AppBtn, AppColor, AppContainer},
 };
 
 use super::{sidebar_item::sidebar_item, HomeEventMessage, HomePage};
@@ -22,7 +22,16 @@ pub fn get_env_items(page: &HomePage) -> Element<'static, HomeEventMessage, Them
                             .width(15)
                             .height(15),
                         Space::with_width(5),
-                        text("Back").vertical_alignment(iced::alignment::Vertical::Center)
+                        text("Back").vertical_alignment(iced::alignment::Vertical::Center),
+                        Space::with_width(Length::Fill),
+                        button(row![
+                            svg(Handle::from_memory(ADD_DOC_SVG)).width(15).height(15),
+                            Space::with_width(10),
+                            text("Add Env").size(14)
+                        ])
+                        .padding(5)
+                        .style(AppBtn::Basic)
+                        .on_press(HomeEventMessage::OnEnvAdd)
                     ]
                     .align_items(iced::Alignment::Center),
                 )

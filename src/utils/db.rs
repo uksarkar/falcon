@@ -380,6 +380,10 @@ impl Projects {
         false
     }
 
+    pub fn add_env(&mut self, env: Env) {
+        self.envs.push(env);
+    }
+
     pub fn sync(&self) -> Result<(), String> {
         set_projects(
             &format!("{}/falcon_projects.toml", app_config().DATA_DIR),

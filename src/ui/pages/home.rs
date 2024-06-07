@@ -14,7 +14,7 @@ use crate::ui::app_theme::{AppContainer, AppTheme};
 use crate::ui::elements::tabs::TabNode;
 use crate::ui::elements::tabs::Tabs;
 use crate::ui::message_bus::Route;
-use crate::utils::db::{Project, Projects};
+use crate::utils::db::{Env, Project, Projects};
 use crate::utils::helpers::page_title;
 use crate::utils::request::{FalconResponse, HttpMethod, PendingRequest, PendingRequestItem};
 
@@ -102,6 +102,7 @@ pub enum HomeEventMessage {
     OnEnvItemValueInput(usize, String),
     OnEnvItemRemove(usize),
     OnEnvNameInput(String),
+    OnEnvAdd,
     OnProjectDefaultEnvSelect(Option<Uuid>),
 }
 
@@ -336,6 +337,13 @@ impl Application for HomePage {
                 if let Some(project) = self.projects.active_mut() {
                     project.default_env = id;
                 }
+                None
+            }
+            HomeEventMessage::OnEnvAdd => {
+                let env = Env::default();
+
+                self.projects.add_env(env.clone());
+                self.projects.set_active_env(env.id);
                 None
             }
             HomeEventMessage::NavigateTo(_) => None,
