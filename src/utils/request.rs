@@ -1,3 +1,4 @@
+use iced::widget::text_editor;
 use reqwest::cookie::Jar;
 use reqwest::header::HeaderMap;
 use reqwest::{Client, Method, StatusCode};
@@ -134,6 +135,17 @@ impl Default for FalconAuthorization {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub enum FlBody {
+    ApplicationJson(String),
+}
+
+impl Default for FlBody {
+    fn default() -> Self {
+        FlBody::ApplicationJson("".to_string())
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct PendingRequest {
     pub id: Uuid,
     pub name: Option<String>,
@@ -143,6 +155,7 @@ pub struct PendingRequest {
     pub cookies: Vec<(String, String)>,
     pub queries: Vec<(String, String)>,
     pub authorization: FalconAuthorization,
+    pub body: FlBody,
 }
 
 impl Default for PendingRequest {
@@ -156,6 +169,7 @@ impl Default for PendingRequest {
             cookies: vec![("".to_string(), "".to_string())],
             queries: vec![("".to_string(), "".to_string())],
             authorization: FalconAuthorization::default(),
+            body: FlBody::default(),
         }
     }
 }
@@ -334,5 +348,9 @@ impl PendingRequest {
 
     pub fn set_auth(&mut self, auth: FalconAuthorization) {
         self.authorization = auth;
+    }
+
+    pub fn set_body(&mut self, body: FlBody) {
+        self.body = body;
     }
 }

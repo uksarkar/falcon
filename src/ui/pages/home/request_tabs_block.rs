@@ -1,23 +1,28 @@
 use iced::{
-    widget::{column, container, row, text, text_input, Column, Space},
+    widget::{
+        column, container, row, text,
+        text_editor::{self, Content},
+        text_input, Column, Space, TextEditor,
+    },
     Element, Length, Padding, Renderer, Theme,
 };
 
 use crate::{
     create_tabs,
     ui::{
-        app_theme::{AppColor, AppContainer, AppInput},
+        app_theme::{AppColor, AppContainer, AppInput, FalconTextarea},
         elements::tabs::Tabs,
     },
-    utils::request::{FalconAuthorization, PendingRequest, PendingRequestItem},
+    utils::request::{FalconAuthorization, FlBody, PendingRequest, PendingRequestItem},
 };
 
 use super::{key_and_value_input_row::key_and_value_input_row, HomeEventMessage};
 
-pub fn request_tab_container(
+pub fn request_tab_container<'a>(
     label: &str,
     pending_request: &PendingRequest,
-) -> Column<'static, HomeEventMessage, Theme, Renderer> {
+    body_context: &'a text_editor::Content,
+) -> Column<'a, HomeEventMessage, Theme, Renderer> {
     let mut container_columns = Column::new();
 
     match label {
@@ -29,7 +34,9 @@ pub fn request_tab_container(
             container_columns =
                 build_key_value_input_columns(&pending_request.headers, PendingRequestItem::Header);
         }
-        "Body" => {}
+        "Body" => {
+            container_columns = container_columns.push(body_block(&pending_request, &body_context));
+        }
         "Authorization" => {
             container_columns = container_columns.push(authorization_block(pending_request));
         }
@@ -115,6 +122,32 @@ fn authorization_block<'a>(req: &PendingRequest) -> Element<'a, HomeEventMessage
                             })
                         }),
                 ]
+            }
+        })
+        .style(AppContainer::Rounded)
+        .padding(10),
+    ]
+    .into()
+}
+
+fn body_block<'a>(
+    req: &PendingRequest,
+    body: &'a Content,
+) -> Element<'a, HomeEventMessage, Theme, Renderer> {
+    column![
+        create_tabs!(
+            Tabs::new(vec!["application/json"], "application/json"),
+            HomeEventMessage::OnBodyTabChange,
+            None,
+            None
+        ),
+        Space::with_height(10),
+        container(match req.body.clone() {
+            FlBody::ApplicationJson(_) => {
+                TextEditor::new(&body)
+                    .height(Length::Fill)
+                    .on_action(HomeEventMessage::OnRequestBodyContextAction)
+                    .style(FalconTextarea)
             }
         })
         .style(AppContainer::Rounded)

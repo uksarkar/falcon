@@ -328,3 +328,49 @@ impl Into<iced::theme::PickList> for AppSelect {
         iced::theme::PickList::Custom(Rc::new(self), Rc::new(self))
     }
 }
+
+pub struct FalconTextarea;
+
+impl iced::widget::text_editor::StyleSheet for FalconTextarea {
+    type Style = Theme;
+
+    fn active(&self, _: &Self::Style) -> iced::widget::text_editor::Appearance {
+        iced::widget::text_editor::Appearance {
+            background: AppColor::BG_DARK.into(),
+            border: Border::default(),
+        }
+    }
+
+    fn focused(&self, style: &Self::Style) -> iced::widget::text_editor::Appearance {
+        self.active(style)
+    }
+
+    fn placeholder_color(&self, _style: &Self::Style) -> Color {
+        AppColor::BG_DARKER.into()
+    }
+
+    fn value_color(&self, style: &Self::Style) -> Color {
+        style.palette().text
+    }
+
+    fn disabled_color(&self, style: &Self::Style) -> Color {
+        style.extended_palette().primary.weak.color
+    }
+
+    fn selection_color(&self, style: &Self::Style) -> Color {
+        style.extended_palette().primary.strong.color
+    }
+
+    fn disabled(&self, _style: &Self::Style) -> iced::widget::text_editor::Appearance {
+        iced::widget::text_editor::Appearance {
+            background: AppColor::BG_SECONDARY.into(),
+            border: Border::default(),
+        }
+    }
+}
+
+impl Into<iced::theme::TextEditor> for FalconTextarea {
+    fn into(self) -> iced::theme::TextEditor {
+        iced::theme::TextEditor::Custom(Box::new(self))
+    }
+}

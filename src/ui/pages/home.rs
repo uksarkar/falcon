@@ -1,5 +1,6 @@
 use env_tabs_block::env_tabs_block;
-use iced::widget::{column, container, mouse_area, row, text, Row, Space};
+use iced::widget::text_editor::Action;
+use iced::widget::{column, container, mouse_area, row, text, text_editor, Row, Space};
 use iced::{Application, Command, Element, Length, Theme};
 use project_tabs_block::project_tabs_block;
 use request_and_response_card::request_and_response_card;
@@ -16,7 +17,9 @@ use crate::ui::elements::tabs::Tabs;
 use crate::ui::message_bus::Route;
 use crate::utils::db::{Env, Project, Projects};
 use crate::utils::helpers::page_title;
-use crate::utils::request::{FalconAuthorization, FalconResponse, HttpMethod, PendingRequest, PendingRequestItem};
+use crate::utils::request::{
+    FalconAuthorization, FalconResponse, FlBody, HttpMethod, PendingRequest, PendingRequestItem,
+};
 
 mod env_tabs_block;
 mod http_badge_column;
@@ -49,6 +52,7 @@ pub struct HomePage {
     is_requesting: bool,
     sidebar_closed: bool,
     state: HomePageState,
+    request_body_context: text_editor::Content,
 }
 
 impl Default for HomePage {
@@ -65,6 +69,7 @@ impl Default for HomePage {
             projects: Projects::new(),
             is_requesting: false,
             response: None,
+            request_body_context: text_editor::Content::new(),
         }
     }
 }
@@ -106,6 +111,9 @@ pub enum HomeEventMessage {
     OnProjectDefaultEnvSelect(Option<Uuid>),
     OnAuthorizationTabChange(TabNode),
     OnAuthorizationInput(FalconAuthorization),
+    OnBodyTabChange(TabNode),
+    OnBodyInput(FlBody),
+    OnRequestBodyContextAction(Action),
 }
 
 impl HomePage {
@@ -356,7 +364,27 @@ impl Application for HomePage {
                 }
                 None
             }
+            HomeEventMessage::OnBodyInput(body) => {
+                if let Some(project) = self.projects.active_mut() {
+                    if let Some(req) = project.current_request_mut() {
+                        req.set_body(body);
+                    }
+                }
+                None
+            }
+            HomeEventMessage::OnRequestBodyContextAction(action) => {
+                self.request_body_context.perform(action);
+
+                if let Some(project) = self.projects.active_mut() {
+                    if let Some(req) = project.current_request_mut() {
+                        req.set_body(FlBody::ApplicationJson(self.request_body_context.text()));
+                    }
+                }
+
+                None
+            }
             HomeEventMessage::OnAuthorizationTabChange(_) => None,
+            HomeEventMessage::OnBodyTabChange(_) => None,
             HomeEventMessage::NavigateTo(_) => None,
         }
         .unwrap_or(Command::none())

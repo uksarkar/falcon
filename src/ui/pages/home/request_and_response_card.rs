@@ -11,13 +11,13 @@ use super::response_tabs_block::response_tab_container;
 use super::url_input_bar::url_input_bar;
 use super::{HomeEventMessage, HomePage};
 
-pub fn request_and_response_card(page: &HomePage) -> Element<'static, HomeEventMessage> {
+pub fn request_and_response_card<'a>(page: &'a HomePage) -> Element<'a, HomeEventMessage> {
     let mut conditional_container = Column::new();
     let (_, pending_request) = page.pending_request();
 
     if let Some(tab) = page.request_tabs.get_active() {
         conditional_container =
-            conditional_container.push(request_tab_container(&tab.label, &pending_request));
+            conditional_container.push(request_tab_container(&tab.label, &pending_request, &page.request_body_context));
     }
 
     if let Some(response) = page.response.clone() {
