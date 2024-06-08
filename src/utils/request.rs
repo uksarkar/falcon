@@ -205,7 +205,7 @@ impl PendingRequest {
             }
         }
 
-        println!("{:<10}: {}", "URL", url.clone());
+        println!("{:<10}: (URL) {}", "INFO", url.clone());
 
         for (name, value) in self.cookies.iter() {
             cookie_jar.add_cookie_str(&format!("{}={}", env.replace_variables(name), env.replace_variables(value)), &url);

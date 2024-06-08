@@ -12,7 +12,7 @@ use ui::app_state::AppState;
 
 #[tokio::main]
 pub async fn main() -> iced::Result {
-    println!("{:<10}: An HTTP request client.", "FALCON");
+    println!("{:<10}: Starting Falcon, an HTTP request client.", "INFO");
 
     AppState::run(Settings {
         window: window::Settings {
