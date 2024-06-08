@@ -57,6 +57,7 @@ pub struct HomePage {
     state: HomePageState,
     request_body_context: text_editor::Content,
     scheduled_sync_at: Instant,
+    show_env_examples: bool,
 }
 
 impl Default for HomePage {
@@ -75,6 +76,7 @@ impl Default for HomePage {
             response: None,
             request_body_context: text_editor::Content::new(),
             scheduled_sync_at: Instant::now(),
+            show_env_examples: true,
         }
     }
 }
@@ -120,6 +122,7 @@ pub enum HomeEventMessage {
     OnRequestBodyContextAction(Action),
     SyncProjects,
     SyncedDone,
+    ToggleEnvExample,
 }
 
 impl HomePage {
@@ -411,6 +414,10 @@ impl Application for HomePage {
 
                 Some(self.schedule_sync())
             }
+            HomeEventMessage::ToggleEnvExample => {
+                self.show_env_examples = !self.show_env_examples;
+                None
+            }
             HomeEventMessage::SyncProjects => Some(self.perform_sync()),
             HomeEventMessage::SyncedDone => {
                 println!("{:<10}Synced to local file", "DB:");
@@ -462,7 +469,7 @@ impl Application for HomePage {
                 base_row = base_row.push(project_tabs_block(self));
             }
             HomePageState::Envs => {
-                base_row = base_row.push(env_tabs_block(self.projects.active_env()));
+                base_row = base_row.push(env_tabs_block(self.projects.active_env(), self.show_env_examples));
             }
         }
 
