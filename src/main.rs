@@ -1,9 +1,12 @@
-use iced::{window, Application, Settings, Size};
+use std::borrow::Cow;
 
+use constants::ROBOTO_FONT;
+use iced::{window, Application, Font, Settings, Size};
+
+mod constants;
 mod models;
 mod ui;
 mod utils;
-mod constants;
 
 use ui::app_state::AppState;
 
@@ -18,6 +21,8 @@ pub async fn main() -> iced::Result {
             position: window::Position::Centered,
             ..Default::default()
         },
+        fonts: vec![Cow::Borrowed(ROBOTO_FONT)],
+        default_font: Font::with_name("Roboto"),
         ..Default::default()
     })
 }
