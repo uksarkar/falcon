@@ -157,7 +157,7 @@ impl HomePage {
                 async move {
                     match projects.sync() {
                         Ok(_) => {}
-                        Err(err) => println!("{:<10}: (DB) Failed to sync, {:?}", "ERROR", err),
+                        Err(err) => println!("{:<10}[FALCON]: (DB) Failed to sync, {:?}", "ERROR", err),
                     }
                     HomeEventMessage::SyncedDone
                 },
@@ -262,7 +262,7 @@ impl Application for HomePage {
             }
             HomeEventMessage::RequestErr(msg) => {
                 self.is_requesting = false;
-                println!("{:<10}: Request failed: {}", "ERROR", msg);
+                println!("{:<10}[FALCON]: (SEND) Request failed, {}", "ERROR", msg);
                 None
             }
             HomeEventMessage::OnRequestItemKeyInput(item, index, name) => {
@@ -420,7 +420,7 @@ impl Application for HomePage {
             }
             HomeEventMessage::SyncProjects => Some(self.perform_sync()),
             HomeEventMessage::SyncedDone => {
-                println!("{:<10}: (DB) Synced to local file", "INFO");
+                println!("{:<10}[FALCON]: (DB) Synced to local file", "INFO");
                 None
             }
             HomeEventMessage::OnAuthorizationTabChange(_) => None,
