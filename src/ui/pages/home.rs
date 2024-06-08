@@ -157,7 +157,7 @@ impl HomePage {
                 async move {
                     match projects.sync() {
                         Ok(_) => {}
-                        Err(err) => println!("Failed to sync, {:?}", err),
+                        Err(err) => println!("{:<10}: Failed to sync, {:?}", "DB", err),
                     }
                     HomeEventMessage::SyncedDone
                 },
@@ -420,7 +420,7 @@ impl Application for HomePage {
             }
             HomeEventMessage::SyncProjects => Some(self.perform_sync()),
             HomeEventMessage::SyncedDone => {
-                println!("{:<10}Synced to local file", "DB:");
+                println!("{:<10}: Synced to local file", "DB");
                 None
             }
             HomeEventMessage::OnAuthorizationTabChange(_) => None,
