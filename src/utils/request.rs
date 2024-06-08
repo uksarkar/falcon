@@ -10,6 +10,8 @@ use uuid::Uuid;
 use crate::ui::elements::select_options::SelectOption;
 use crate::utils::helpers::format_duration;
 
+use super::db::Env;
+
 #[derive(Debug, Clone)]
 pub struct FalconDuration(Duration);
 
@@ -190,21 +192,21 @@ impl Default for PendingRequest {
 }
 
 impl PendingRequest {
-    pub async fn send(&self) -> anyhow::Result<FalconResponse> {
+    pub async fn send(&self, env: &Env) -> anyhow::Result<FalconResponse> {
         // Create a cookie jar
         let cookie_jar = Arc::new(Jar::default());
 
         // Add a cookie manually (if needed)
-        let mut url = url::Url::parse(&self.url)?;
+        let mut url = url::Url::parse(&env.replace_variables(self.url.clone()))?;
 
         for (name, value) in self.queries.iter() {
             if !name.trim().is_empty() {
-                url.set_query(Some(&format!("{}={}", name, value)));
+                url.set_query(Some(&format!("{}={}", env.replace_variables(name), env.replace_variables(value))));
             }
         }
 
         for (name, value) in self.cookies.iter() {
-            cookie_jar.add_cookie_str(&format!("{}={}", name, value), &url);
+            cookie_jar.add_cookie_str(&format!("{}={}", env.replace_variables(name), env.replace_variables(value)), &url);
         }
 
         let mut headers = HeaderMap::new();
@@ -212,8 +214,8 @@ impl PendingRequest {
         for (key, value) in self.headers.iter() {
             if !key.trim().is_empty() {
                 headers.insert(
-                    HeaderName::from_bytes(key.as_bytes())?,
-                    HeaderValue::from_str(&value)?,
+                    HeaderName::from_bytes(env.replace_variables(key).as_bytes())?,
+                    HeaderValue::from_str(&env.replace_variables(value))?,
                 );
             }
         }
@@ -232,7 +234,7 @@ impl PendingRequest {
                 if !token.trim().is_empty() {
                     headers.insert(
                         header::AUTHORIZATION,
-                        HeaderValue::from_str(&format!("{} {}", prefix, token))?,
+                        HeaderValue::from_str(&format!("{} {}", env.replace_variables(prefix), env.replace_variables(token)))?,
                     );
                 }
             }

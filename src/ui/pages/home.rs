@@ -139,7 +139,7 @@ impl HomePage {
         self.scheduled_sync_at = Instant::now();
         Command::perform(
             async {
-                sleep( Duration::from_millis(500));
+                sleep(Duration::from_millis(500));
                 HomeEventMessage::SyncProjects
             },
             |msg| msg,
@@ -167,17 +167,17 @@ impl HomePage {
 }
 
 // impl AppComponent for HomePage {
-    // fn app_theme(&self) -> crate::ui::app_theme::AppTheme {
-    //     if let Some(theme) = self.theme.clone() {
-    //         return theme;
-    //     }
+// fn app_theme(&self) -> crate::ui::app_theme::AppTheme {
+//     if let Some(theme) = self.theme.clone() {
+//         return theme;
+//     }
 
-    //     AppTheme::Light
-    // }
+//     AppTheme::Light
+// }
 
-    // fn set_theme(&mut self, theme: AppTheme) {
-    //     self.theme = Some(theme);
-    // }
+// fn set_theme(&mut self, theme: AppTheme) {
+//     self.theme = Some(theme);
+// }
 // }
 
 impl Application for HomePage {
@@ -236,14 +236,17 @@ impl Application for HomePage {
             }
             HomeEventMessage::SendRequest => {
                 if let Some(project) = self.projects.active() {
-                    if let Some(req) = project.current_request() {
+                    if let Some((_, req)) = project.current_request() {
                         self.is_requesting = true;
-                        return Command::perform(send_request(req.1.clone()), |response| {
-                            match response {
+                        let env = self.projects.active_env().unwrap_or_default();
+                        let request = req.clone();
+                        return Command::perform(
+                            async move { request.send(&env).await },
+                            |response| match response {
                                 Ok(res) => HomeEventMessage::RequestFinished(res),
                                 Err(err) => HomeEventMessage::RequestErr(err.to_string()),
-                            }
-                        });
+                            },
+                        );
                     }
                 }
 
@@ -474,8 +477,4 @@ impl Application for HomePage {
         ]
         .into()
     }
-}
-
-async fn send_request(pending_request: PendingRequest) -> anyhow::Result<FalconResponse> {
-    pending_request.send().await
 }
