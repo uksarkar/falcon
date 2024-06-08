@@ -4,7 +4,6 @@ use constants::ROBOTO_FONT;
 use iced::{window, Application, Font, Settings, Size};
 
 mod constants;
-mod models;
 mod ui;
 mod utils;
 
