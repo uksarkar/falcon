@@ -12,6 +12,9 @@ use super::db::env::Env;
 use super::falcon_duration::FalconDuration;
 
 pub mod http_method;
+pub mod request_url;
+
+pub use request_url::RequestUrl;
 
 #[derive(Debug, Clone)]
 pub enum PendingRequestItem {
@@ -109,12 +112,14 @@ impl Default for PendingRequest {
 }
 
 impl PendingRequest {
-    pub async fn send(&self, env: &Env) -> anyhow::Result<FalconResponse> {
+    pub async fn send(&self, env: &Env, base_url: &str) -> anyhow::Result<FalconResponse> {
         // Create a cookie jar
         let cookie_jar = Arc::new(Jar::default());
 
+        let url = RequestUrl::from(self.url.clone()).build(base_url);
+
         // Add a cookie manually (if needed)
-        let mut url = url::Url::parse(&env.replace_variables(self.url.clone()))?;
+        let mut url = url::Url::parse(&env.replace_variables(url))?;
 
         for (name, value) in self.queries.iter() {
             if !name.trim().is_empty() {

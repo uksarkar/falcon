@@ -4,7 +4,7 @@ use iced::{Element, Length};
 
 use crate::constants::{ADD_DOC_SVG, COG_API_SVG};
 use crate::ui::app_theme::{AppBtn, AppColor, AppContainer, AppSelect};
-use crate::utils::request::PendingRequest;
+use crate::utils::request::{PendingRequest, RequestUrl};
 
 use super::events::{EnvEvent, RequestEvent};
 use super::http_badge_column::HttpBadgeColumn;
@@ -39,7 +39,7 @@ pub fn sidebar_requests(page: &HomePage) -> Element<'static, HomeEventMessage> {
                     button(svg(Handle::from_memory(ADD_DOC_SVG)).width(15).height(15))
                         .style(AppBtn::Basic)
                         .padding(3)
-                        .on_press(RequestEvent::Add(PendingRequest::default()).into()),
+                        .on_press(RequestEvent::New.into()),
                     container(text("New request").size(10))
                         .style(AppContainer::Bg(AppColor::BG_DARKEST))
                         .padding(4),
@@ -57,13 +57,15 @@ pub fn sidebar_requests(page: &HomePage) -> Element<'static, HomeEventMessage> {
         );
 
     if let Some(project) = page.db.active() {
+        let base_url = project.base_url.unwrap_or_default();
+
         for (_, reqs) in project.requests {
             for req in reqs {
                 let card: Container<'static, HomeEventMessage> = HttpBadgeColumn {
                     label: if req.name.clone().is_some_and(|n| n.trim().len() > 0) {
                         req.name.unwrap_or_default().trim().to_string()
                     } else {
-                        req.url.clone()
+                        RequestUrl::from(req.url.clone()).build(&base_url)
                     },
                     on_click: RequestEvent::Select(req.id).into(),
                     on_duplicate: RequestEvent::Add(PendingRequest {

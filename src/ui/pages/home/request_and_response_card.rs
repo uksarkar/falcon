@@ -5,6 +5,7 @@ use iced::{Element, Length, Padding};
 use crate::constants::{COMPRESS_SVG, EXPAND_SVG};
 use crate::create_tabs;
 use crate::ui::app_theme::{AppContainer, AppInput};
+use crate::utils::request::RequestUrl;
 
 use super::events::RequestEvent;
 use super::request_tabs_block::request_tab_container;
@@ -17,8 +18,11 @@ pub fn request_and_response_card<'a>(page: &'a HomePage) -> Element<'a, HomeEven
     let (_, pending_request) = page.pending_request();
 
     if let Some(tab) = page.request_tabs.get_active() {
-        conditional_container =
-            conditional_container.push(request_tab_container(&tab.label, &pending_request, &page.request_body_context));
+        conditional_container = conditional_container.push(request_tab_container(
+            &tab.label,
+            &pending_request,
+            &page.request_body_context,
+        ));
     }
 
     if let Some(response) = page.response.clone() {
@@ -45,7 +49,13 @@ pub fn request_and_response_card<'a>(page: &'a HomePage) -> Element<'a, HomeEven
         .width(Length::Fill),
         Space::with_height(10),
         url_input_bar(
-            &pending_request.url,
+            &RequestUrl::from(pending_request.url).build(
+                page.db
+                    .active()
+                    .and_then(|p| Some(p.base_url.unwrap_or_default()))
+                    .unwrap_or_default()
+                    .as_str()
+            ),
             page.is_requesting,
             &pending_request.method
         ),

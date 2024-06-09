@@ -211,8 +211,10 @@ impl Application for HomePage {
                         self.is_requesting = true;
                         let env = self.db.active_env().unwrap_or_default();
                         let request = req.clone();
+                        let base_url = project.base_url.unwrap_or_default();
+
                         return Command::perform(
-                            async move { request.send(&env).await },
+                            async move { request.send(&env, &base_url).await },
                             |response| match response {
                                 Ok(res) => HomeEventMessage::RequestFinished(res),
                                 Err(err) => HomeEventMessage::RequestErr(err.to_string()),

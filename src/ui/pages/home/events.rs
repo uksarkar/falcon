@@ -144,6 +144,7 @@ pub enum RequestEvent {
     Delete(Uuid),
     AuthorizationInput(FalconAuthorization),
     UrlInput(String),
+    New
 }
 
 impl Into<HomeEventMessage> for RequestEvent {
@@ -175,7 +176,7 @@ impl RequestEvent {
                 }
             }
             RequestEvent::Add(request) => {
-                project.add_request("root".into(), request);
+                project.add_request("root", request);
             }
             RequestEvent::Select(id) => {
                 project.set_current_request(id);
@@ -189,7 +190,10 @@ impl RequestEvent {
                 }
             }
             RequestEvent::UrlInput(url) => {
-                project.update_request_url(url);
+                project.update_request_url(url.into());
+            }
+            RequestEvent::New => {
+                project.add_new_request();
             }
         }
     }

@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use crate::{
     ui::elements::select_options::SelectOption,
-    utils::request::{http_method::HttpMethod, PendingRequest, PendingRequestItem},
+    utils::request::{http_method::HttpMethod, PendingRequest, PendingRequestItem, RequestUrl},
 };
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -85,9 +85,10 @@ impl Project {
         }
     }
 
-    pub fn update_request_url(&mut self, url: String) {
+    pub fn update_request_url(&mut self, url: RequestUrl) {
+        let base_url = self.base_url.clone().unwrap_or_default();
         if let Some(active_req) = self.current_request_mut() {
-            active_req.set_url(url);
+            active_req.set_url(url.extract(&base_url));
         }
     }
 
@@ -97,14 +98,29 @@ impl Project {
         }
     }
 
-    pub fn add_request(&mut self, folder: String, request: PendingRequest) {
+    pub fn add_request(&mut self, folder: impl Into<String>, request: PendingRequest) {
         self.set_current_request(request.id);
+        let folder = folder.into();
 
         if let Some(reqs) = self.requests.get_mut(&folder) {
             reqs.push(request);
         } else {
             self.requests.insert(folder, vec![request]);
         }
+    }
+
+    pub fn add_new_request(&mut self) -> PendingRequest {
+        let base_url = self.base_url.clone().unwrap_or_default();
+        let url = RequestUrl::from(base_url.clone()).extract(&base_url);
+
+        let req = PendingRequest {
+            url,
+            ..Default::default()
+        };
+
+        self.add_request("root", req.clone());
+
+        req
     }
 
     pub fn remove_request(&mut self, folder: String, id: Uuid) {
