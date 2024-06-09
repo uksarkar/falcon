@@ -46,11 +46,11 @@ pub fn get_sidebar_projects_items(
                 .width(Length::Fill),
         );
 
-    for project in page.projects.into_options().iter() {
+    for project in page.db.into_options().iter() {
         items = items
             .push(sidebar_item(
                 &project.label,
-                page.projects
+                page.db
                     .active()
                     .is_some_and(|p| p.id == project.value),
                 ProjectEvent::Select(project.value).into(),

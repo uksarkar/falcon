@@ -15,8 +15,8 @@ pub fn sidebar_requests(page: &HomePage) -> Element<'static, HomeEventMessage> {
         .push(
             container(row![
                 pick_list(
-                    page.projects.env_into_options(),
-                    page.projects.selected_env_as_option(),
+                    page.db.env_into_options(),
+                    page.db.selected_env_as_option(),
                     |env| EnvEvent::Select(env.value).into()
                 )
                 .padding(2)
@@ -56,7 +56,7 @@ pub fn sidebar_requests(page: &HomePage) -> Element<'static, HomeEventMessage> {
                 .width(Length::Fill),
         );
 
-    if let Some(project) = page.projects.active() {
+    if let Some(project) = page.db.active() {
         for (_, reqs) in project.requests {
             for req in reqs {
                 let card: Container<'static, HomeEventMessage> = HttpBadgeColumn {
@@ -78,7 +78,7 @@ pub fn sidebar_requests(page: &HomePage) -> Element<'static, HomeEventMessage> {
                     on_remove: RequestEvent::Delete(req.id).into(),
                     method: req.method,
                     is_active: page
-                        .projects
+                        .db
                         .active()
                         .is_some_and(|p| p.current_request_id().is_some_and(|id| id == req.id)),
                 }

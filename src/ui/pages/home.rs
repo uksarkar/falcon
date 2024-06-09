@@ -18,7 +18,7 @@ use crate::ui::app_theme::AppContainer;
 use crate::ui::elements::tabs::TabNode;
 use crate::ui::elements::tabs::Tabs;
 use crate::ui::message_bus::Route;
-use crate::utils::db::Projects;
+use crate::utils::db::DB;
 use crate::utils::helpers::page_title;
 use crate::utils::request::{FalconResponse, FlBody, PendingRequest};
 
@@ -49,7 +49,7 @@ pub struct HomePage {
     // theme: Option<AppTheme>,
     request_tabs: Tabs,
     response_tabs: Tabs,
-    projects: Projects,
+    db: DB,
     response: Option<FalconResponse>,
     is_requesting: bool,
     sidebar_closed: bool,
@@ -70,7 +70,7 @@ impl Default for HomePage {
                 "Query",
             ),
             response_tabs: Tabs::new(vec!["Header", "Body", "Cookies"], "Body"),
-            projects: Projects::new(),
+            db: DB::new(),
             is_requesting: false,
             response: None,
             request_body_context: text_editor::Content::new(),
@@ -115,7 +115,7 @@ pub enum HomeEventMessage {
 impl HomePage {
     fn pending_request(&self) -> (String, PendingRequest) {
         if let Some(current) = self
-            .projects
+            .db
             .active()
             .and_then(|p| p.current_request().map(|(s, r)| (s.clone(), r.clone())))
         {
@@ -138,11 +138,11 @@ impl HomePage {
 
     fn perform_sync(&self) -> Command<HomeEventMessage> {
         if Instant::now().duration_since(self.scheduled_sync_at) > Duration::from_millis(500) {
-            let projects = self.projects.clone();
+            let db = self.db.clone();
 
             return Command::perform(
                 async move {
-                    match projects.sync() {
+                    match db.sync() {
                         Ok(_) => {}
                         Err(err) => {
                             println!("{:<10}[FALCON]: (DB) Failed to sync, {:?}", "ERROR", err)
@@ -206,10 +206,10 @@ impl Application for HomePage {
                 None
             }
             HomeEventMessage::SendRequest => {
-                if let Some(project) = self.projects.active() {
+                if let Some(project) = self.db.active() {
                     if let Some((_, req)) = project.current_request() {
                         self.is_requesting = true;
-                        let env = self.projects.active_env().unwrap_or_default();
+                        let env = self.db.active_env().unwrap_or_default();
                         let request = req.clone();
                         return Command::perform(
                             async move { request.send(&env).await },
@@ -239,16 +239,16 @@ impl Application for HomePage {
             }
             HomeEventMessage::ProjectEvent(event) => {
                 event
-                    .handle(&mut self.projects)
+                    .handle(&mut self.db)
                     .then(|| self.state = HomePageState::Projects);
                 Some(self.schedule_sync())
             }
             HomeEventMessage::EnvEvent(event) => {
-                event.handle(&mut self.projects);
+                event.handle(&mut self.db);
                 Some(self.schedule_sync())
             }
             HomeEventMessage::RequestEvent(event) => {
-                if let Some(project) = self.projects.active_mut() {
+                if let Some(project) = self.db.active_mut() {
                     event.handle(project);
                     return self.schedule_sync();
                 }
@@ -257,7 +257,7 @@ impl Application for HomePage {
             HomeEventMessage::OnRequestBodyContextAction(action) => {
                 self.request_body_context.perform(action);
 
-                if let Some(project) = self.projects.active_mut() {
+                if let Some(project) = self.db.active_mut() {
                     if let Some(req) = project.current_request_mut() {
                         req.set_body(FlBody::ApplicationJson(self.request_body_context.text()));
                     }
@@ -321,7 +321,7 @@ impl Application for HomePage {
             }
             HomePageState::Envs => {
                 base_row = base_row.push(env_tabs_block(
-                    self.projects.active_env(),
+                    self.db.active_env(),
                     self.show_env_examples,
                 ));
             }
@@ -330,8 +330,8 @@ impl Application for HomePage {
         // build main view here
         column![
             tob_bar(
-                self.projects.into_options(),
-                self.projects.selected_project(),
+                self.db.into_options(),
+                self.db.selected_project(),
                 self.sidebar_closed,
             ),
             base_row

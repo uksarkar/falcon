@@ -280,13 +280,13 @@ impl Display for Project {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Projects {
+pub struct DB {
     #[serde(rename = "projects")]
     items: Vec<Project>,
     envs: Vec<Env>,
 }
 
-impl Into<SelectItems<Uuid>> for &Projects {
+impl Into<SelectItems<Uuid>> for &DB {
     fn into(self) -> SelectItems<Uuid> {
         SelectItems(
             <Vec<Project> as Clone>::clone(&self.items)
@@ -297,7 +297,7 @@ impl Into<SelectItems<Uuid>> for &Projects {
     }
 }
 
-impl Projects {
+impl DB {
     pub fn new() -> Self {
         get_projects(&format!("{}/falcon_projects.toml", app_config().DATA_DIR)).unwrap_or(Self {
             items: vec![Project::default()],
@@ -510,7 +510,7 @@ impl Projects {
     }
 }
 
-fn get_projects(path: &str) -> Result<Projects, String> {
+fn get_projects(path: &str) -> Result<DB, String> {
     let path = Path::new(path);
 
     if !path.exists() {
@@ -532,7 +532,7 @@ fn get_projects(path: &str) -> Result<Projects, String> {
     }
 }
 
-fn set_projects(path: &str, projects: &Projects) -> Result<(), String> {
+fn set_projects(path: &str, projects: &DB) -> Result<(), String> {
     let path = Path::new(path);
 
     if !path.exists() {

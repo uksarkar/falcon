@@ -1,7 +1,7 @@
 use uuid::Uuid;
 
 use crate::utils::{
-    db::{Env, Project, Projects},
+    db::{Env, Project, DB},
     request::{FalconAuthorization, HttpMethod, PendingRequest, PendingRequestItem},
 };
 
@@ -20,7 +20,7 @@ pub enum EnvEvent {
 }
 
 impl EnvEvent {
-    pub fn handle(self, db: &mut Projects) {
+    pub fn handle(self, db: &mut DB) {
         match self {
             EnvEvent::Select(id) => {
                 db.set_active_env(id);
@@ -85,7 +85,7 @@ impl Into<HomeEventMessage> for ProjectEvent {
 }
 
 impl ProjectEvent {
-    pub fn handle(self, db: &mut Projects) -> bool {
+    pub fn handle(self, db: &mut DB) -> bool {
         match self {
             ProjectEvent::NameInput(name) => {
                 if let Some(project) = db.active_mut() {

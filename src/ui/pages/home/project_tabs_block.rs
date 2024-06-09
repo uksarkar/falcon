@@ -16,9 +16,9 @@ use super::events::ProjectEvent;
 use super::{HomeEventMessage, HomePage};
 
 pub fn project_tabs_block(page: &HomePage) -> Element<'static, HomeEventMessage, Theme, Renderer> {
-    let active_project = page.projects.active();
+    let active_project = page.db.active();
     let project_env: Option<SelectOption<Uuid>> = page
-        .projects
+        .db
         .project_default_env()
         .and_then(|env| Some(env.into()));
 
@@ -27,7 +27,7 @@ pub fn project_tabs_block(page: &HomePage) -> Element<'static, HomeEventMessage,
         .push(Space::with_width(10))
         .push(
             pick_list(
-                page.projects.env_into_options(),
+                page.db.env_into_options(),
                 project_env.clone(),
                 |env| ProjectEvent::DefaultEnvSelect(Some(env.value)).into(),
             )

@@ -52,11 +52,11 @@ pub fn get_env_items(page: &HomePage) -> Element<'static, HomeEventMessage, Them
                 .width(Length::Fill),
         );
 
-    for env in page.projects.env_into_options().iter() {
+    for env in page.db.env_into_options().iter() {
         items = items
             .push(sidebar_item(
                 env.label.clone().as_str(),
-                page.projects.is_active_env(env.value),
+                page.db.is_active_env(env.value),
                 EnvEvent::Select(env.value).into(),
                 EnvEvent::Delete(env.value).into(),
                 EnvEvent::Duplicate(env.value).into(),
