@@ -211,7 +211,7 @@ impl Application for HomePage {
                         self.is_requesting = true;
                         let env = self.db.active_env().unwrap_or_default();
                         let request = req.clone();
-                        let base_url = project.base_url.unwrap_or_default();
+                        let base_url = self.db.get_active_base_url();
 
                         return Command::perform(
                             async move { request.send(&env, &base_url).await },
@@ -250,8 +250,9 @@ impl Application for HomePage {
                 Some(self.schedule_sync())
             }
             HomeEventMessage::RequestEvent(event) => {
+                let base_url = self.db.get_active_base_url();
                 if let Some(project) = self.db.active_mut() {
-                    event.handle(project);
+                    event.handle(project, &base_url);
                     return self.schedule_sync();
                 }
                 None

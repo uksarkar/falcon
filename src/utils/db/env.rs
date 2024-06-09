@@ -13,6 +13,7 @@ pub struct Env {
     pub name: String,
     pub items: Vec<(String, String)>,
     pub is_active: bool,
+    pub base_url: Option<String>,
 }
 
 impl Default for Env {
@@ -22,6 +23,7 @@ impl Default for Env {
             name: "Default env".into(),
             items: vec![("".into(), "".into())],
             is_active: Default::default(),
+            base_url: None
         }
     }
 }

@@ -16,6 +16,7 @@ pub enum EnvEvent {
     ItemValueInput(usize, String),
     ItemRemove(usize),
     NameInput(String),
+    BaseUrlInput(String),
     Add,
 }
 
@@ -57,6 +58,10 @@ impl EnvEvent {
                 db.add_env(env.clone());
                 db.set_active_env(env.id);
             }
+            EnvEvent::BaseUrlInput(base) => {
+                let base = if base.is_empty() {None} else {Some(base)};
+                db.set_active_base_url(base);
+            }
         }
     }
 }
@@ -70,7 +75,6 @@ impl Into<HomeEventMessage> for EnvEvent {
 #[derive(Debug, Clone)]
 pub enum ProjectEvent {
     NameInput(String),
-    BaseUrlInput(String),
     Remove(Uuid),
     Duplicate(Uuid),
     DefaultEnvSelect(Option<Uuid>),
@@ -90,12 +94,6 @@ impl ProjectEvent {
             ProjectEvent::NameInput(name) => {
                 if let Some(project) = db.active_mut() {
                     project.name = name;
-                }
-                false
-            }
-            ProjectEvent::BaseUrlInput(url) => {
-                if let Some(project) = db.active_mut() {
-                    project.base_url = Some(url);
                 }
                 false
             }
@@ -126,6 +124,9 @@ impl ProjectEvent {
             }
             ProjectEvent::Select(id) => {
                 db.set_active(&id);
+                if let Some(id) = db.get_project_default_env_id() {
+                    db.set_active_env(id);
+                }
                 false
             }
         }
@@ -154,7 +155,7 @@ impl Into<HomeEventMessage> for RequestEvent {
 }
 
 impl RequestEvent {
-    pub fn handle(self, project: &mut Project) {
+    pub fn handle(self, project: &mut Project, base_url: &str) {
         match self {
             RequestEvent::SelectMethod(method) => {
                 project.update_request_method(method);
@@ -190,10 +191,10 @@ impl RequestEvent {
                 }
             }
             RequestEvent::UrlInput(url) => {
-                project.update_request_url(url.into());
+                project.update_request_url(url.into(), base_url);
             }
             RequestEvent::New => {
-                project.add_new_request();
+                project.add_new_request(base_url);
             }
         }
     }

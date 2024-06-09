@@ -76,27 +76,6 @@ pub fn project_tabs_block(page: &HomePage) -> Element<'static, HomeEventMessage,
                 .width(Length::Fill)
         )
         .padding(Padding::from([10, 0])),
-        row![
-            text("Base URL: ").size(14),
-            text_input(
-                "https://utpal.io",
-                &active_project
-                    .clone()
-                    .and_then(|p| p.base_url)
-                    .unwrap_or_default()
-            )
-            .style(AppInput)
-            .on_input(|url| HomeEventMessage::ProjectEvent(ProjectEvent::BaseUrlInput(url)))
-            .width(Length::Fill)
-        ]
-        .align_items(iced::Alignment::Center),
-        container(
-            container("")
-                .style(AppContainer::Bg(AppColor::BG_DARKER))
-                .height(1)
-                .width(Length::Fill)
-        )
-        .padding(Padding::from([10, 0])),
         env_row.align_items(iced::Alignment::Center),
     ])
     .align_y(iced::alignment::Vertical::Center)

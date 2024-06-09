@@ -1,6 +1,6 @@
 use crate::{
     constants::{COMPRESS_SVG, EXPAND_SVG},
-    ui::app_theme::{AppBtn, AppContainer, AppInput},
+    ui::app_theme::{AppBtn, AppColor, AppContainer, AppInput},
     utils::db::env::Env,
 };
 use iced::widget::svg::Handle;
@@ -49,7 +49,7 @@ pub fn env_tabs_block<'a>(
 
     // env name input
     let env_name_input = container(
-        container(
+        container(column![
             row![
                 Space::with_width(10),
                 text("Env name:"),
@@ -65,7 +65,25 @@ pub fn env_tabs_block<'a>(
                 .on_input(|name| EnvEvent::NameInput(name).into()),
             ]
             .align_items(iced::Alignment::Center),
-        )
+            container(
+                container("")
+                    .style(AppContainer::Bg(AppColor::BG_DARKER))
+                    .height(1)
+                    .width(Length::Fill)
+            )
+            .padding(Padding::from([10, 0])),
+            row![
+                text("Base URL: ").size(14),
+                text_input(
+                    "https://utpal.io",
+                    &active_env.clone().and_then(|env| env.base_url).unwrap_or_default()
+                )
+                .style(AppInput)
+                .on_input(|url| EnvEvent::BaseUrlInput(url).into())
+                .width(Length::Fill)
+            ]
+            .align_items(iced::Alignment::Center),
+        ])
         .align_y(iced::alignment::Vertical::Center)
         .padding(2)
         .width(Length::Fill)

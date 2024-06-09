@@ -49,13 +49,7 @@ pub fn request_and_response_card<'a>(page: &'a HomePage) -> Element<'a, HomeEven
         .width(Length::Fill),
         Space::with_height(10),
         url_input_bar(
-            &RequestUrl::from(pending_request.url).build(
-                page.db
-                    .active()
-                    .and_then(|p| Some(p.base_url.unwrap_or_default()))
-                    .unwrap_or_default()
-                    .as_str()
-            ),
+            &RequestUrl::from(pending_request.url).build(&page.db.get_active_base_url()),
             page.is_requesting,
             &pending_request.method
         ),

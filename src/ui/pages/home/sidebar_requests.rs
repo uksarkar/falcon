@@ -57,7 +57,7 @@ pub fn sidebar_requests(page: &HomePage) -> Element<'static, HomeEventMessage> {
         );
 
     if let Some(project) = page.db.active() {
-        let base_url = project.base_url.unwrap_or_default();
+        let base_url = page.db.active_env().and_then(|e| e.base_url).unwrap_or_default();
 
         for (_, reqs) in project.requests {
             for req in reqs {

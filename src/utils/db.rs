@@ -231,6 +231,16 @@ impl DB {
         None
     }
 
+    pub fn get_active_base_url(&self) -> String {
+        self.active_env().and_then(|env| env.base_url).unwrap_or_default()
+    }
+
+    pub fn set_active_base_url(&mut self, base: Option<String>) {
+        if let Some(env) = self.active_env_mut() {
+            env.base_url = base;
+        }
+    }
+
     pub fn env_into_options(&self) -> SelectItems<Uuid> {
         SelectItems(
             <Vec<Env> as Clone>::clone(&self.envs)

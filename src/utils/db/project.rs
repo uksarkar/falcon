@@ -11,7 +11,6 @@ use crate::{
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Project {
     pub name: String,
-    pub base_url: Option<String>,
     pub is_active: bool,
     pub id: Uuid,
     pub requests: HashMap<String, Vec<PendingRequest>>,
@@ -85,8 +84,7 @@ impl Project {
         }
     }
 
-    pub fn update_request_url(&mut self, url: RequestUrl) {
-        let base_url = self.base_url.clone().unwrap_or_default();
+    pub fn update_request_url(&mut self, url: RequestUrl, base_url: &str) {
         if let Some(active_req) = self.current_request_mut() {
             active_req.set_url(url.extract(&base_url));
         }
@@ -109,9 +107,8 @@ impl Project {
         }
     }
 
-    pub fn add_new_request(&mut self) -> PendingRequest {
-        let base_url = self.base_url.clone().unwrap_or_default();
-        let url = RequestUrl::from(base_url.clone()).extract(&base_url);
+    pub fn add_new_request(&mut self, base_url: &str) -> PendingRequest {
+        let url = RequestUrl::from(base_url.to_string()).extract(&base_url);
 
         let req = PendingRequest {
             url,
@@ -158,7 +155,6 @@ impl Default for Project {
             id: Uuid::now_v7(),
             requests,
             active_request_id: None,
-            base_url: None,
             default_env: None,
         }
     }
