@@ -6,6 +6,7 @@ use crate::constants::{COMPRESS_SVG, EXPAND_SVG};
 use crate::create_tabs;
 use crate::ui::app_theme::{AppContainer, AppInput};
 
+use super::events::RequestEvent;
 use super::request_tabs_block::request_tab_container;
 use super::response_tabs_block::response_tab_container;
 use super::url_input_bar::url_input_bar;
@@ -33,7 +34,7 @@ pub fn request_and_response_card<'a>(page: &'a HomePage) -> Element<'a, HomeEven
                 text_input("Unknown request", &pending_request.name.unwrap_or_default())
                     .style(AppInput)
                     .width(Length::Fill)
-                    .on_input(HomeEventMessage::OnRequestNameInput),
+                    .on_input(|name| RequestEvent::NameInput(name).into()),
             ]
             .align_items(iced::Alignment::Center)
         )

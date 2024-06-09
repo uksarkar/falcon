@@ -16,7 +16,9 @@ use crate::{
     utils::request::{FalconAuthorization, FlBody, PendingRequest, PendingRequestItem},
 };
 
-use super::{key_and_value_input_row::key_and_value_input_row, HomeEventMessage};
+use super::{
+    events::RequestEvent, key_and_value_input_row::key_and_value_input_row, HomeEventMessage,
+};
 
 pub fn request_tab_container<'a>(
     label: &str,
@@ -65,9 +67,9 @@ fn build_key_value_input_columns(
             key,
             value,
             items.len() > 1 && items.len() != index + 1,
-            HomeEventMessage::RemoveRequestItem(item_a, index),
-            move |input| HomeEventMessage::OnRequestItemKeyInput(item_b.clone(), index, input),
-            move |input| HomeEventMessage::OnRequestItemValueInput(item_c.clone(), index, input),
+            RequestEvent::RemoveItem(item_a, index).into(),
+            move |input| RequestEvent::ItemKeyInput(item_b.clone(), index, input).into(),
+            move |input| RequestEvent::ItemValueInput(item_c.clone(), index, input).into(),
         ));
     }
 
@@ -95,12 +97,11 @@ fn authorization_block<'a>(req: &PendingRequest) -> Element<'a, HomeEventMessage
                         text_input("Bearer", &prefix)
                             .style(AppInput)
                             .on_input(move |p| {
-                                HomeEventMessage::OnAuthorizationInput(
-                                    FalconAuthorization::Bearer {
-                                        prefix: p,
-                                        token: token_a.clone(),
-                                    },
-                                )
+                                RequestEvent::AuthorizationInput(FalconAuthorization::Bearer {
+                                    prefix: p,
+                                    token: token_a.clone(),
+                                })
+                                .into()
                             })
                     ]
                     .align_items(iced::Alignment::Center),
@@ -116,10 +117,11 @@ fn authorization_block<'a>(req: &PendingRequest) -> Element<'a, HomeEventMessage
                         .width(Length::Fill)
                         .style(AppInput)
                         .on_input(move |t| {
-                            HomeEventMessage::OnAuthorizationInput(FalconAuthorization::Bearer {
+                            RequestEvent::AuthorizationInput(FalconAuthorization::Bearer {
                                 prefix: prefix_a.clone(),
                                 token: t,
                             })
+                            .into()
                         }),
                 ]
             }

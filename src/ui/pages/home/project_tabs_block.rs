@@ -12,6 +12,7 @@ use crate::ui::{
     elements::select_options::SelectOption,
 };
 
+use super::events::ProjectEvent;
 use super::{HomeEventMessage, HomePage};
 
 pub fn project_tabs_block(page: &HomePage) -> Element<'static, HomeEventMessage, Theme, Renderer> {
@@ -28,7 +29,7 @@ pub fn project_tabs_block(page: &HomePage) -> Element<'static, HomeEventMessage,
             pick_list(
                 page.projects.env_into_options(),
                 project_env.clone(),
-                |env| HomeEventMessage::OnProjectDefaultEnvSelect(Some(env.value)),
+                |env| ProjectEvent::DefaultEnvSelect(Some(env.value)).into(),
             )
             .placeholder("Select Environment")
             .style(AppSelect::Card),
@@ -43,7 +44,9 @@ pub fn project_tabs_block(page: &HomePage) -> Element<'static, HomeEventMessage,
             )
             .style(AppBtn::Basic)
             .padding(5)
-            .on_press(HomeEventMessage::OnProjectDefaultEnvSelect(None)),
+            .on_press(HomeEventMessage::ProjectEvent(
+                ProjectEvent::DefaultEnvSelect(None),
+            )),
             container(text("Remove Environment").size(14))
                 .padding(5)
                 .style(AppContainer::Bg(AppColor::BG_DARKER)),
@@ -63,7 +66,7 @@ pub fn project_tabs_block(page: &HomePage) -> Element<'static, HomeEventMessage,
             )
             .style(AppInput)
             .width(Length::Fill)
-            .on_input(HomeEventMessage::OnProjectNameInput),
+            .on_input(|name| HomeEventMessage::ProjectEvent(ProjectEvent::NameInput(name))),
         ]
         .align_items(iced::Alignment::Center),
         container(
@@ -83,7 +86,7 @@ pub fn project_tabs_block(page: &HomePage) -> Element<'static, HomeEventMessage,
                     .unwrap_or_default()
             )
             .style(AppInput)
-            .on_input(HomeEventMessage::OnProjectBaseUrlInput)
+            .on_input(|url| HomeEventMessage::ProjectEvent(ProjectEvent::BaseUrlInput(url)))
             .width(Length::Fill)
         ]
         .align_items(iced::Alignment::Center),

@@ -9,7 +9,7 @@ use iced::{
     Element, Length, Padding, Renderer, Theme,
 };
 
-use super::{key_and_value_input_row::key_and_value_input_row, HomeEventMessage};
+use super::{events::EnvEvent, key_and_value_input_row::key_and_value_input_row, HomeEventMessage};
 
 pub fn env_tabs_block<'a>(
     active_env: Option<Env>,
@@ -47,51 +47,61 @@ pub fn env_tabs_block<'a>(
         column![Space::with_height(10),].into()
     };
 
-    let mut items = Column::new()
-        .push(container(
-            container(
-                row![
-                    Space::with_width(10),
-                    text("Env name:"),
-                    Space::with_width(10),
-                    text_input(
-                        "value",
-                        &active_env
-                            .clone()
-                            .and_then(|env| Some(env.name))
-                            .unwrap_or_default()
-                    )
-                    .style(AppInput)
-                    .on_input(|name| HomeEventMessage::OnEnvNameInput(name)),
-                ]
-                .align_items(iced::Alignment::Center),
-            )
-            .align_y(iced::alignment::Vertical::Center)
-            .padding(2)
-            .width(Length::Fill)
-            .style(AppContainer::Rounded),
-        ))
-        .push(container(column![
-            Space::with_height(10),
+    // env name input
+    let env_name_input = container(
+        container(
             row![
-                text("Usage"),
                 Space::with_width(10),
-                button(
-                    svg(Handle::from_memory(if show_examples {
-                        EXPAND_SVG
-                    } else {
-                        COMPRESS_SVG
-                    }))
-                    .width(12)
-                    .height(12)
+                text("Env name:"),
+                Space::with_width(10),
+                text_input(
+                    "value",
+                    &active_env
+                        .clone()
+                        .and_then(|env| Some(env.name))
+                        .unwrap_or_default()
                 )
-                .padding(5)
-                .style(AppBtn::Basic)
-                .on_press(HomeEventMessage::ToggleEnvExample)
-            ],
-            examples
-        ]))
-        .push(container(text("Variables")).padding(Padding::from([10, 0])));
+                .style(AppInput)
+                .on_input(|name| EnvEvent::NameInput(name).into()),
+            ]
+            .align_items(iced::Alignment::Center),
+        )
+        .align_y(iced::alignment::Vertical::Center)
+        .padding(2)
+        .width(Length::Fill)
+        .style(AppContainer::Rounded),
+    );
+
+    //examples
+    let examples = container(column![
+        Space::with_height(10),
+        row![
+            text("Usage"),
+            Space::with_width(10),
+            button(
+                svg(Handle::from_memory(if show_examples {
+                    EXPAND_SVG
+                } else {
+                    COMPRESS_SVG
+                }))
+                .width(12)
+                .height(12)
+            )
+            .padding(5)
+            .style(AppBtn::Basic)
+            .on_press(HomeEventMessage::ToggleEnvExample)
+        ],
+        examples
+    ]);
+
+    // label variables
+    let var_label = container(text("Variables")).padding(Padding::from([10, 0]));
+
+    // build the column
+    let mut items = Column::new()
+        .push(env_name_input)
+        .push(examples)
+        .push(var_label);
 
     if let Some(env) = active_env {
         for (index, (key, value)) in env.items.iter().enumerate() {
@@ -99,9 +109,9 @@ pub fn env_tabs_block<'a>(
                 key,
                 value,
                 env.items.len() > 1 && env.items.len() != index + 1,
-                HomeEventMessage::OnEnvItemRemove(index),
-                move |key| HomeEventMessage::OnEnvItemKeyInput(index, key),
-                move |value| HomeEventMessage::OnEnvItemValueInput(index, value),
+                EnvEvent::ItemRemove(index).into(),
+                move |key| EnvEvent::ItemKeyInput(index, key).into(),
+                move |value| EnvEvent::ItemValueInput(index, value).into(),
             ));
         }
     }

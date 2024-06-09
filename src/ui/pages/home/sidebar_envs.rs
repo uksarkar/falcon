@@ -10,7 +10,7 @@ use crate::{
     ui::app_theme::{AppBtn, AppColor, AppContainer},
 };
 
-use super::{sidebar_item::sidebar_item, HomeEventMessage, HomePage};
+use super::{events::EnvEvent, sidebar_item::sidebar_item, HomeEventMessage, HomePage};
 
 pub fn get_env_items(page: &HomePage) -> Element<'static, HomeEventMessage, Theme, Renderer> {
     let mut items = Column::new()
@@ -31,7 +31,7 @@ pub fn get_env_items(page: &HomePage) -> Element<'static, HomeEventMessage, Them
                         ])
                         .padding(5)
                         .style(AppBtn::Basic)
-                        .on_press(HomeEventMessage::OnEnvAdd)
+                        .on_press(EnvEvent::Add.into())
                     ]
                     .align_items(iced::Alignment::Center),
                 )
@@ -57,9 +57,9 @@ pub fn get_env_items(page: &HomePage) -> Element<'static, HomeEventMessage, Them
             .push(sidebar_item(
                 env.label.clone().as_str(),
                 page.projects.is_active_env(env.value),
-                HomeEventMessage::OnEnvSelect(env.value),
-                HomeEventMessage::OnEnvDelete(env.value),
-                HomeEventMessage::OnEnvDuplicate(env.value),
+                EnvEvent::Select(env.value).into(),
+                EnvEvent::Delete(env.value).into(),
+                EnvEvent::Duplicate(env.value).into(),
             ))
             .push(
                 container("")

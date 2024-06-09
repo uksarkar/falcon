@@ -11,7 +11,7 @@ use crate::{
     utils::request::HttpMethod,
 };
 
-use super::HomeEventMessage;
+use super::{events::RequestEvent, HomeEventMessage};
 
 pub fn url_input_bar(
     url: &str,
@@ -31,13 +31,13 @@ pub fn url_input_bar(
     container(
         row![
             pick_list(get_method_options(), Some(selected_method), |item| {
-                HomeEventMessage::OnRequestMethodChanged(item.value.into())
+                RequestEvent::SelectMethod(item.value.into()).into()
             })
             .style(AppSelect::Card),
             text_input("https://utpal.io", url)
                 .style(AppInput)
                 .width(Length::Fill)
-                .on_input(HomeEventMessage::UrlInput),
+                .on_input(|url| RequestEvent::UrlInput(url).into()),
             Space::with_width(10),
             button,
         ]

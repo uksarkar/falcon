@@ -1,13 +1,12 @@
 use iced::widget::svg::Handle;
-use iced::widget::{
-    button, container, pick_list, row, svg, text, tooltip, Column, Container,
-};
+use iced::widget::{button, container, pick_list, row, svg, text, tooltip, Column, Container};
 use iced::{Element, Length};
 
 use crate::constants::{ADD_DOC_SVG, COG_API_SVG};
 use crate::ui::app_theme::{AppBtn, AppColor, AppContainer, AppSelect};
 use crate::utils::request::PendingRequest;
 
+use super::events::{EnvEvent, RequestEvent};
 use super::http_badge_column::HttpBadgeColumn;
 use super::{HomeEventMessage, HomePage};
 
@@ -18,7 +17,7 @@ pub fn sidebar_requests(page: &HomePage) -> Element<'static, HomeEventMessage> {
                 pick_list(
                     page.projects.env_into_options(),
                     page.projects.selected_env_as_option(),
-                    |env| HomeEventMessage::OnEnvSelect(env.value)
+                    |env| EnvEvent::Select(env.value).into()
                 )
                 .padding(2)
                 .text_size(14)
@@ -40,7 +39,7 @@ pub fn sidebar_requests(page: &HomePage) -> Element<'static, HomeEventMessage> {
                     button(svg(Handle::from_memory(ADD_DOC_SVG)).width(15).height(15))
                         .style(AppBtn::Basic)
                         .padding(3)
-                        .on_press(HomeEventMessage::AddNewRequest(PendingRequest::default())),
+                        .on_press(RequestEvent::Add(PendingRequest::default()).into()),
                     container(text("New request").size(10))
                         .style(AppContainer::Bg(AppColor::BG_DARKEST))
                         .padding(4),
@@ -66,16 +65,17 @@ pub fn sidebar_requests(page: &HomePage) -> Element<'static, HomeEventMessage> {
                     } else {
                         req.url.clone()
                     },
-                    on_click: HomeEventMessage::SelectRequest(req.id),
-                    on_duplicate: HomeEventMessage::AddNewRequest(PendingRequest {
+                    on_click: RequestEvent::Select(req.id).into(),
+                    on_duplicate: RequestEvent::Add(PendingRequest {
                         cookies: req.cookies.clone(),
                         headers: req.headers.clone(),
                         method: req.method.clone(),
                         queries: req.queries.clone(),
                         url: req.url.clone(),
                         ..Default::default()
-                    }),
-                    on_remove: HomeEventMessage::DeleteRequest(req.id),
+                    })
+                    .into(),
+                    on_remove: RequestEvent::Delete(req.id).into(),
                     method: req.method,
                     is_active: page
                         .projects

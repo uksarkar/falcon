@@ -13,6 +13,7 @@ use crate::{
     },
 };
 
+use super::events::ProjectEvent;
 use super::HomeEventMessage;
 
 pub fn tob_bar(
@@ -37,9 +38,10 @@ pub fn tob_bar(
             .padding(5)
             .on_press(HomeEventMessage::ToggleSidebar),
             Space::with_width(10),
-            pick_list(projects, selected_project, |item| {
-                HomeEventMessage::OnProjectChange(item.value)
-            })
+            pick_list(projects, selected_project, |item| ProjectEvent::Select(
+                item.value
+            )
+            .into())
             .style(AppSelect::Card),
             Space::with_width(10),
             button(svg(Handle::from_memory(PEN_CLIP_SVG)).width(20).height(20))
@@ -52,7 +54,7 @@ pub fn tob_bar(
             button("New")
                 .style(AppBtn::Secondary)
                 .padding(Padding::from([5, 15]))
-                .on_press(HomeEventMessage::NewProject("Unknown project".to_string())),
+                .on_press(ProjectEvent::Add("Unknown project".to_string()).into()),
         ]
         .padding(8.0)
         .align_items(iced::Alignment::Center),
