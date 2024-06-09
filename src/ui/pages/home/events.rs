@@ -1,8 +1,8 @@
 use uuid::Uuid;
 
 use crate::utils::{
-    db::{Env, Project, DB},
-    request::{FalconAuthorization, HttpMethod, PendingRequest, PendingRequestItem},
+    db::{env::Env, project::Project, DB},
+    request::{FalconAuthorization, http_method::HttpMethod, PendingRequest, PendingRequestItem},
 };
 
 use super::HomeEventMessage;

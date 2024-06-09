@@ -1,7 +1,7 @@
 use crate::{
     constants::{COMPRESS_SVG, EXPAND_SVG},
     ui::app_theme::{AppBtn, AppContainer, AppInput},
-    utils::db::Env,
+    utils::db::env::Env,
 };
 use iced::widget::svg::Handle;
 use iced::{

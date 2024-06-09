@@ -1,31 +1,17 @@
+use http_method::HttpMethod;
 use reqwest::cookie::Jar;
 use reqwest::header::{self, HeaderMap, HeaderName, HeaderValue};
-use reqwest::{Body, Client, Method, StatusCode};
+use reqwest::{Body, Client, StatusCode};
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use std::sync::Arc;
-use std::time::{Duration, Instant, SystemTime};
+use std::time::{Instant, SystemTime};
 use uuid::Uuid;
 
-use crate::ui::elements::select_options::SelectOption;
-use crate::utils::helpers::format_duration;
+use super::db::env::Env;
+use super::falcon_duration::FalconDuration;
 
-use super::db::Env;
-
-#[derive(Debug, Clone)]
-pub struct FalconDuration(Duration);
-
-impl From<Duration> for FalconDuration {
-    fn from(value: Duration) -> Self {
-        Self(value)
-    }
-}
-
-impl Display for FalconDuration {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", format_duration(self.0))
-    }
-}
+pub mod http_method;
 
 #[derive(Debug, Clone)]
 pub enum PendingRequestItem {
@@ -50,75 +36,6 @@ pub struct FalconResponse {
     pub cookies: Vec<FalconCookie>,
     pub duration: FalconDuration,
     pub size_kb: f64,
-}
-
-#[derive(Debug, Default, Clone, PartialEq)]
-pub struct HttpMethod(pub Method);
-
-impl Into<SelectOption<HttpMethod>> for HttpMethod {
-    fn into(self) -> SelectOption<HttpMethod> {
-        SelectOption {
-            label: format!("{}", self),
-            value: self,
-        }
-    }
-}
-
-impl Serialize for HttpMethod {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        serializer.serialize_str(self.0.as_str())
-    }
-}
-
-impl<'de> Deserialize<'de> for HttpMethod {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let method_str = String::deserialize(deserializer)?;
-        let method = Method::from_bytes(method_str.as_bytes()).map_err(serde::de::Error::custom)?;
-        Ok(HttpMethod(method))
-    }
-}
-
-impl Into<Method> for HttpMethod {
-    fn into(self) -> Method {
-        self.0
-    }
-}
-
-impl From<Method> for HttpMethod {
-    fn from(value: Method) -> Self {
-        Self(value)
-    }
-}
-
-impl From<&str> for HttpMethod {
-    fn from(value: &str) -> Self {
-        Self(
-            value
-                .to_uppercase()
-                .as_bytes()
-                .try_into()
-                .unwrap_or_default(),
-        )
-    }
-}
-
-impl Display for HttpMethod {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut val = self.0.as_str().chars();
-
-        let val = match val.next() {
-            None => "Get".to_string(),
-            Some(char) => char.to_uppercase().to_string() + val.as_str().to_lowercase().as_str(),
-        };
-
-        write!(f, "{}", val)
-    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -201,14 +118,30 @@ impl PendingRequest {
 
         for (name, value) in self.queries.iter() {
             if !name.trim().is_empty() {
-                url.set_query(Some(&format!("{}={}", env.replace_variables(name), env.replace_variables(value))));
+                url.set_query(Some(&format!(
+                    "{}={}",
+                    env.replace_variables(name),
+                    env.replace_variables(value)
+                )));
             }
         }
 
-        println!("{:<10}[FALCON]: ({}) {}", "INFO", self.method.0.clone(), url.clone());
+        println!(
+            "{:<10}[FALCON]: ({}) {}",
+            "INFO",
+            self.method.0.clone(),
+            url.clone()
+        );
 
         for (name, value) in self.cookies.iter() {
-            cookie_jar.add_cookie_str(&format!("{}={}", env.replace_variables(name), env.replace_variables(value)), &url);
+            cookie_jar.add_cookie_str(
+                &format!(
+                    "{}={}",
+                    env.replace_variables(name),
+                    env.replace_variables(value)
+                ),
+                &url,
+            );
         }
 
         let mut headers = HeaderMap::new();
@@ -236,7 +169,11 @@ impl PendingRequest {
                 if !token.trim().is_empty() {
                     headers.insert(
                         header::AUTHORIZATION,
-                        HeaderValue::from_str(&format!("{} {}", env.replace_variables(prefix), env.replace_variables(token)))?,
+                        HeaderValue::from_str(&format!(
+                            "{} {}",
+                            env.replace_variables(prefix),
+                            env.replace_variables(token)
+                        ))?,
                     );
                 }
             }

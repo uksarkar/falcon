@@ -8,7 +8,7 @@ use crate::{
         app_theme::{AppBtn, AppContainer, AppInput, AppSelect},
         elements::select_options::{SelectItems, SelectOption},
     },
-    utils::request::HttpMethod,
+    utils::request::http_method::HttpMethod,
 };
 
 use super::{events::RequestEvent, HomeEventMessage};

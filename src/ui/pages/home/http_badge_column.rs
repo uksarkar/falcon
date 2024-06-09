@@ -9,7 +9,7 @@ use iced::{Renderer, Theme};
 use crate::{
     constants::{CROSS_SMALL_SVG, DUPLICATE_SVG},
     ui::app_theme::{AppBtn, AppColor, AppContainer},
-    utils::{helpers::ellipse_text, request::HttpMethod},
+    utils::{helpers::ellipse_text, request::http_method::HttpMethod},
 };
 
 pub struct HttpBadgeColumn<Message> {
