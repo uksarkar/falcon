@@ -35,6 +35,10 @@ impl AppColor {
         rgb: COLOR_BG_SECONDARY,
         darken: Some(10),
     };
+    pub const BG_DARKER_12: AppColor = AppColor {
+        rgb: COLOR_BG_SECONDARY,
+        darken: Some(12),
+    };
     pub const BG_DARKEST: AppColor = AppColor {
         rgb: COLOR_BG_SECONDARY,
         darken: Some(30),
@@ -179,6 +183,7 @@ pub enum AppContainer {
     FlatSecondary,
     BadgePrimary,
     Bg(AppColor),
+    FlatBg(AppColor),
 }
 
 impl container::StyleSheet for AppContainer {
@@ -186,7 +191,9 @@ impl container::StyleSheet for AppContainer {
 
     fn appearance(&self, style: &Self::Style) -> container::Appearance {
         let border = match self {
-            AppContainer::Flat | AppContainer::FlatSecondary => Border::default(),
+            AppContainer::Flat | AppContainer::FlatSecondary | AppContainer::FlatBg(_) => {
+                Border::default()
+            }
             AppContainer::SuccessIndicator => Border::with_radius(2.0),
             AppContainer::Outlined => Border {
                 radius: 5.0.into(),
@@ -201,7 +208,7 @@ impl container::StyleSheet for AppContainer {
             AppContainer::SuccessIndicator => {
                 Some(iced::Background::Color(style.palette().success))
             }
-            AppContainer::Bg(color) => Some(color.clone().into()),
+            AppContainer::Bg(color) | AppContainer::FlatBg(color) => Some(color.clone().into()),
             AppContainer::Outlined => Some(iced::Background::Color(iced::Color::TRANSPARENT)),
             AppContainer::FlatSecondary => Some(AppColor::BG_LIGHT.into()),
             AppContainer::BadgePrimary => Some(AppColor::BG_DARKER.into()),

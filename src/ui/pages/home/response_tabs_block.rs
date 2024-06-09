@@ -3,10 +3,11 @@ use iced::{
     widget::{column, container, row, scrollable, text, Column, Container, Space},
     Length, Renderer, Theme,
 };
+use reqwest::header;
 
 use crate::{
     create_tabs,
-    ui::{app_theme::AppContainer, elements::tabs::Tabs},
+    ui::{app_theme::AppContainer, elements::tabs::Tabs, tokenizer::json::tokenize},
     utils::request::FalconResponse,
 };
 
@@ -45,11 +46,30 @@ pub fn response_tab_container(
     if let Some(tab) = tabs.get_active() {
         match tab.label.as_str() {
             "Body" => {
-                tab_container = tab_container.push(
-                    container(text(response.body))
-                        .padding(10)
-                        .width(Length::Fill),
-                );
+                let is_json = response
+                    .headers
+                    .get(header::CONTENT_TYPE)
+                    .is_some_and(|h| h.to_str().is_ok_and(|h| h.contains("application/json")));
+
+                if is_json {
+                    match tokenize(&response.body) {
+                        Ok(lines) => {
+                            tab_container = tab_container.push(
+                                Column::from_vec(
+                                    lines.into_iter().map(|line| line.into()).collect(),
+                                )
+                                .width(Length::Fill),
+                            );
+                        }
+                        Err(err) => println!("{}", err),
+                    }
+                } else {
+                    tab_container = tab_container.push(
+                        container(text(response.body))
+                            .padding(10)
+                            .width(Length::Fill),
+                    );
+                }
             }
             "Header" => {
                 for (name, value) in response.headers {
