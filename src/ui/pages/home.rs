@@ -5,7 +5,7 @@ use env_tabs_block::env_tabs_block;
 use events::{EnvEvent, ProjectEvent, RequestEvent};
 use iced::widget::text_editor::Action;
 use iced::widget::{column, container, mouse_area, row, text, text_editor, Row, Space};
-use iced::{Application, Command, Element, Length, Theme};
+use iced::{clipboard, Application, Command, Element, Length, Theme};
 use project_tabs_block::project_tabs_block;
 use request_and_response_card::request_and_response_card;
 use sidebar_envs::get_env_items;
@@ -110,6 +110,9 @@ pub enum HomeEventMessage {
     EnvEvent(EnvEvent),
     ProjectEvent(ProjectEvent),
     RequestEvent(RequestEvent),
+
+    // action event
+    CopyTxt(String),
 }
 
 impl HomePage {
@@ -276,6 +279,9 @@ impl Application for HomePage {
             HomeEventMessage::SyncedDone => {
                 println!("{:<10}[FALCON]: (DB) Synced to local file", "INFO");
                 None
+            }
+            HomeEventMessage::CopyTxt(txt) => {
+                Some(clipboard::write(txt))
             }
             HomeEventMessage::OnAuthorizationTabChange(_) => None,
             HomeEventMessage::OnBodyTabChange(_) => None,

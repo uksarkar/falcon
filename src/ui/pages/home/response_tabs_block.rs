@@ -1,13 +1,21 @@
 use chrono::{DateTime, Utc};
 use iced::{
-    widget::{column, container, row, scrollable, text, Column, Container, Space},
+    widget::svg::Handle,
+    widget::{
+        button, column, container, row, scrollable, svg, text, Column, Container, Row, Space,
+    },
     Length, Renderer, Theme,
 };
 use reqwest::header;
 
 use crate::{
+    constants::DUPLICATE_SVG,
     create_tabs,
-    ui::{app_theme::AppContainer, elements::tabs::Tabs, tokenizer::json::tokenize},
+    ui::{
+        app_theme::{AppBtn, AppContainer},
+        elements::tabs::Tabs,
+        tokenizer::json::tokenize,
+    },
     utils::request::FalconResponse,
 };
 
@@ -33,14 +41,14 @@ pub fn response_tab_container(
                 .width(Length::Fill)
                 .height(1)
                 .style(AppContainer::Hr),
-        )
-        .push(create_tabs!(
-            tabs,
-            HomeEventMessage::OnResponseTabChange,
-            None,
-            None
-        ));
+        );
 
+    let mut tabs_row = Row::new().push(create_tabs!(
+        tabs,
+        HomeEventMessage::OnResponseTabChange,
+        None,
+        None
+    ));
     let mut tab_container = Column::new();
 
     if let Some(tab) = tabs.get_active() {
@@ -65,11 +73,18 @@ pub fn response_tab_container(
                     }
                 } else {
                     tab_container = tab_container.push(
-                        container(text(response.body))
+                        container(text(&response.body))
                             .padding(10)
                             .width(Length::Fill),
                     );
                 }
+
+                tabs_row = tabs_row.push(Space::with_width(Length::Fill)).push(
+                    button(svg(Handle::from_memory(DUPLICATE_SVG)).width(20).height(20))
+                        .padding(5)
+                        .style(AppBtn::Basic)
+                        .on_press(HomeEventMessage::CopyTxt(response.body)),
+                );
             }
             "Header" => {
                 for (name, value) in response.headers {
@@ -143,7 +158,9 @@ pub fn response_tab_container(
         };
     };
 
-    response_tab = response_tab.push(container(scrollable(tab_container)).width(Length::Fill));
+    response_tab = response_tab
+        .push(tabs_row)
+        .push(container(scrollable(tab_container)).width(Length::Fill));
 
     container(response_tab)
         .height(Length::Fill)
