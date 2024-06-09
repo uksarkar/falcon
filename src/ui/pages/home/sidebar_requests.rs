@@ -57,7 +57,11 @@ pub fn sidebar_requests(page: &HomePage) -> Element<'static, HomeEventMessage> {
         );
 
     if let Some(project) = page.db.active() {
-        let base_url = page.db.active_env().and_then(|e| e.base_url).unwrap_or_default();
+        let base_url = page
+            .db
+            .active_env()
+            .and_then(|e| e.base_url)
+            .unwrap_or_default();
 
         for (_, reqs) in project.requests {
             for req in reqs {
@@ -65,7 +69,13 @@ pub fn sidebar_requests(page: &HomePage) -> Element<'static, HomeEventMessage> {
                     label: if req.name.clone().is_some_and(|n| n.trim().len() > 0) {
                         req.name.unwrap_or_default().trim().to_string()
                     } else {
-                        RequestUrl::from(req.url.clone()).build(&base_url)
+                        let url = RequestUrl::from(req.url.clone()).build(&base_url);
+
+                        if url.is_empty() {
+                            "<empty>".to_string()
+                        } else {
+                            url
+                        }
                     },
                     on_click: RequestEvent::Select(req.id).into(),
                     on_duplicate: RequestEvent::Add(PendingRequest {
