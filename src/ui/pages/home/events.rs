@@ -72,7 +72,7 @@ impl Into<HomeEventMessage> for EnvEvent {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ProjectEvent {
     NameInput(String),
     Remove(Uuid),

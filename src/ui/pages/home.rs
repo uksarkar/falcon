@@ -61,6 +61,18 @@ pub struct HomePage {
 
 impl Default for HomePage {
     fn default() -> Self {
+        let db = DB::new();
+
+        let req_body = if let Some(proj) = db.active() {
+            if let Some((_, req)) = proj.current_request() {
+                req.body.to_string()
+            } else {
+                "".to_string()
+            }
+        } else {
+            "".to_string()
+        };
+
         Self {
             // theme: Default::default(),
             sidebar_closed: Default::default(),
@@ -70,10 +82,10 @@ impl Default for HomePage {
                 "Query",
             ),
             response_tabs: Tabs::new(vec!["Header", "Body", "Cookies"], "Body"),
-            db: DB::new(),
+            db,
             is_requesting: false,
             response: None,
-            request_body_context: text_editor::Content::new(),
+            request_body_context: text_editor::Content::with_text(&req_body),
             scheduled_sync_at: Instant::now(),
             show_env_examples: true,
         }
@@ -113,6 +125,7 @@ pub enum HomeEventMessage {
 
     // action event
     CopyTxt(String),
+    IntApp,
 }
 
 impl HomePage {
@@ -159,6 +172,14 @@ impl HomePage {
 
         Command::none()
     }
+
+    fn update_request_body(&mut self) {
+        if let Some(proj) = self.db.active() {
+            if let Some((_, req)) = proj.current_request() {
+                self.request_body_context = text_editor::Content::with_text(&req.body.to_string());
+            }
+        }
+    }
 }
 
 // impl AppComponent for HomePage {
@@ -182,7 +203,10 @@ impl Application for HomePage {
     type Flags = ();
 
     fn new(_flags: ()) -> (HomePage, Command<Self::Message>) {
-        (HomePage::default(), Command::none())
+        (
+            HomePage::default(),
+            Command::perform(async { HomeEventMessage::IntApp }, |msg| msg),
+        )
     }
 
     fn title(&self) -> String {
@@ -191,6 +215,7 @@ impl Application for HomePage {
 
     fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
         match message {
+            HomeEventMessage::IntApp => None,
             HomeEventMessage::ToggleSidebar => {
                 self.sidebar_closed = !self.sidebar_closed;
                 None
@@ -212,6 +237,7 @@ impl Application for HomePage {
                 if let Some(project) = self.db.active() {
                     if let Some((_, req)) = project.current_request() {
                         self.is_requesting = true;
+                        self.response = None;
                         let env = self.db.active_env().unwrap_or_default();
                         let request = req.clone();
                         let base_url = self.db.get_active_base_url();
@@ -244,8 +270,17 @@ impl Application for HomePage {
             }
             HomeEventMessage::ProjectEvent(event) => {
                 event
+                    .clone()
                     .handle(&mut self.db)
                     .then(|| self.state = HomePageState::Projects);
+
+                match event {
+                    ProjectEvent::Select(_) => {
+                        self.update_request_body();
+                    }
+                    _ => (),
+                }
+
                 Some(self.schedule_sync())
             }
             HomeEventMessage::EnvEvent(event) => {
@@ -256,6 +291,9 @@ impl Application for HomePage {
                 let base_url = self.db.get_active_base_url();
                 if let Some(project) = self.db.active_mut() {
                     event.handle(project, &base_url);
+
+                    self.update_request_body();
+
                     return self.schedule_sync();
                 }
                 None
@@ -280,9 +318,7 @@ impl Application for HomePage {
                 println!("{:<10}[FALCON]: (DB) Synced to local file", "INFO");
                 None
             }
-            HomeEventMessage::CopyTxt(txt) => {
-                Some(clipboard::write(txt))
-            }
+            HomeEventMessage::CopyTxt(txt) => Some(clipboard::write(txt)),
             HomeEventMessage::OnAuthorizationTabChange(_) => None,
             HomeEventMessage::OnBodyTabChange(_) => None,
             HomeEventMessage::NavigateTo(_) => None,
@@ -329,10 +365,8 @@ impl Application for HomePage {
                 base_row = base_row.push(project_tabs_block(self));
             }
             HomePageState::Envs => {
-                base_row = base_row.push(env_tabs_block(
-                    self.db.active_env(),
-                    self.show_env_examples,
-                ));
+                base_row =
+                    base_row.push(env_tabs_block(self.db.active_env(), self.show_env_examples));
             }
         }
 
