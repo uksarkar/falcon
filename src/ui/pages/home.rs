@@ -87,7 +87,7 @@ impl Default for HomePage {
             response: None,
             request_body_context: text_editor::Content::with_text(&req_body),
             scheduled_sync_at: Instant::now(),
-            show_env_examples: true,
+            show_env_examples: false,
         }
     }
 }
