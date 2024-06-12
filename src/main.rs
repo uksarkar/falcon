@@ -19,7 +19,6 @@ pub async fn main() -> iced::Result {
     AppState::run(Settings {
         window: window::Settings {
             min_size: Some(Size::new(500.0, 500.0)),
-            size: Size::INFINITY,
             position: window::Position::Centered,
             ..Default::default()
         },

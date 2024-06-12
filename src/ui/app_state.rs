@@ -1,4 +1,4 @@
-use iced::{Application, Command, Element, Theme};
+use iced::{window, Application, Command, Element, Theme};
 
 use super::{
     // app_component::AppComponent,
@@ -63,7 +63,7 @@ impl Application for AppState {
     type Flags = ();
 
     fn new(_flags: ()) -> (AppState, Command<Self::Message>) {
-        (AppState::new(), Command::none())
+        (AppState::new(), window::maximize(window::Id::MAIN, true))
     }
 
     fn theme(&self) -> iced::Theme {
