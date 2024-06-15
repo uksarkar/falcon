@@ -101,7 +101,7 @@ fn format_tokens(tokens: Vec<JsonToken>) -> Vec<Line> {
                     vec![token, JsonToken::Comma]
                 };
 
-                indent -= 4;
+                indent = indent.checked_sub(4).unwrap_or(indent);
                 lines.push(Line {
                     elements,
                     indent,
