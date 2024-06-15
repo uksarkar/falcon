@@ -123,11 +123,8 @@ impl PendingRequest {
 
         for (name, value) in self.queries.iter() {
             if !name.trim().is_empty() {
-                url.set_query(Some(&format!(
-                    "{}={}",
-                    env.replace_variables(name),
-                    env.replace_variables(value)
-                )));
+                url.query_pairs_mut()
+                    .append_pair(&env.replace_variables(name), &env.replace_variables(value));
             }
         }
 
