@@ -27,7 +27,7 @@ pub fn get_env_items(page: &HomePage) -> Element<'static, HomeEventMessage, Them
                         button(row![
                             svg(Handle::from_memory(ADD_DOC_SVG)).width(15).height(15),
                             Space::with_width(10),
-                            text("Add Env").size(14)
+                            text("New Env").size(14)
                         ])
                         .padding(5)
                         .style(AppBtn::Basic)

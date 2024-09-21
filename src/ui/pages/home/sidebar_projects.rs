@@ -1,13 +1,13 @@
 use iced::widget::svg::Handle;
-use iced::widget::Column;
+use iced::widget::{button, Column};
 use iced::{
     widget::{container, mouse_area, row, svg, text, Space},
     Element, Length, Padding, Renderer, Theme,
 };
 
-use crate::constants::ANGLE_LEFT_SVG;
-use crate::ui::app_theme::AppColor;
+use crate::constants::{ADD_DOC_SVG, ANGLE_LEFT_SVG};
 use crate::ui::app_theme::AppContainer;
+use crate::ui::app_theme::{AppBtn, AppColor};
 
 use super::events::ProjectEvent;
 use super::sidebar_item::sidebar_item;
@@ -25,7 +25,16 @@ pub fn get_sidebar_projects_items(
                             .width(15)
                             .height(15),
                         Space::with_width(5),
-                        text("Back").vertical_alignment(iced::alignment::Vertical::Center)
+                        text("Back").vertical_alignment(iced::alignment::Vertical::Center),
+                        Space::with_width(Length::Fill),
+                        button(row![
+                            svg(Handle::from_memory(ADD_DOC_SVG)).width(15).height(15),
+                            Space::with_width(10),
+                            text("New project").size(14)
+                        ])
+                        .padding(5)
+                        .style(AppBtn::Basic)
+                        .on_press(ProjectEvent::Add("Unknown project".into()).into())
                     ]
                     .align_items(iced::Alignment::Center),
                 )
@@ -50,9 +59,7 @@ pub fn get_sidebar_projects_items(
         items = items
             .push(sidebar_item(
                 &project.label,
-                page.db
-                    .active()
-                    .is_some_and(|p| p.id == project.value),
+                page.db.active().is_some_and(|p| p.id == project.value),
                 ProjectEvent::Select(project.value).into(),
                 ProjectEvent::Remove(project.value).into(),
                 ProjectEvent::Duplicate(project.value).into(),
@@ -67,4 +74,3 @@ pub fn get_sidebar_projects_items(
 
     items.into()
 }
-

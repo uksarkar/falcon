@@ -13,7 +13,7 @@ use crate::{
     },
 };
 
-use super::events::ProjectEvent;
+use super::events::{ProjectEvent, RequestEvent};
 use super::HomeEventMessage;
 
 pub fn tob_bar(
@@ -54,7 +54,7 @@ pub fn tob_bar(
             button("New")
                 .style(AppBtn::Secondary)
                 .padding(Padding::from([5, 15]))
-                .on_press(ProjectEvent::Add("Unknown project".to_string()).into()),
+                .on_press(RequestEvent::New.into()),
         ]
         .padding(8.0)
         .align_items(iced::Alignment::Center),
